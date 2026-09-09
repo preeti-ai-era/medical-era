@@ -1,0 +1,182 @@
+require("dotenv").config();
+
+const express = require("express");
+const cors = require("cors");
+const OpenAI = require("openai");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+let latestPatientCase = null;
+
+// Test backend
+app.get("/", (req, res) => {
+  res.json({
+    message: "Medical Era backend is running",
+  });
+});
+
+// Patient submits a case
+app.post("/api/patient", (req, res) => {
+  latestPatientCase = {
+    ...req.body,
+    submittedAt: new Date().toISOString(),
+  };
+
+  console.log("Patient case received:", latestPatientCase);
+
+  res.json({
+    message: "Patient data received successfully",
+    case: latestPatientCase,
+  });
+});
+
+// Doctor retrieves the latest patient case
+app.get("/api/patient/latest", (req, res) => {
+  res.json({
+    case: latestPatientCase,
+  });
+});
+
+// AI creates a structured case summary
+app.post("/api/ai-summary", async (req, res) => {
+  try {
+    const { complaint, answers, uploadedFiles } = req.body;
+
+    const patientInformation = {
+      complaint: complaint || "Not provided",
+      answers: answers || {},
+      uploadedFiles: uploadedFiles || [],
+    };
+
+    const response = await client.responses.create({
+      model: "gpt-5.6-luna",
+
+      instructions: `
+You are the AI information-organizing assistant for Medical Era.
+
+Your job is ONLY to organize the patient's submitted information for a doctor.
+
+Do NOT diagnose.
+Do NOT prescribe medicines.
+Do NOT recommend treatment.
+Do NOT make clinical decisions.
+Do NOT tell the patient they are safe or healthy.
+
+The doctor must verify all AI-generated information and make the final clinical decision.
+
+Return a structured summary containing:
+- chief complaint
+- duration/timeline
+- relevant history
+- current medicines
+- allergies
+- concise case summary
+- priority findings for doctor review
+
+Priority findings are only review-priority labels, not diagnoses.
+`,
+
+      input: JSON.stringify(patientInformation),
+
+      text: {
+        format: {
+          type: "json_schema",
+          name: "medical_era_case_summary",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              chiefComplaint: {
+                type: "string"
+              },
+              duration: {
+                type: "string"
+              },
+              relevantHistory: {
+                type: "string"
+              },
+              medicines: {
+                type: "string"
+              },
+              allergies: {
+                type: "string"
+              },
+              caseSummary: {
+                type: "string"
+              },
+              priorityFindings: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    level: {
+                      type: "string",
+                      enum: ["red", "orange", "green"]
+                    },
+                    finding: {
+                      type: "string"
+                    },
+                    supportingInformation: {
+                      type: "string"
+                    },
+                    whyFlagged: {
+                      type: "string"
+                    }
+                  },
+                  required: [
+                    "level",
+                    "finding",
+                    "supportingInformation",
+                    "whyFlagged"
+                  ],
+                  additionalProperties: false
+                }
+              }
+            },
+            required: [
+              "chiefComplaint",
+              "duration",
+              "relevantHistory",
+              "medicines",
+              "allergies",
+              "caseSummary",
+              "priorityFindings"
+            ],
+            additionalProperties: false
+          }
+        }
+      }
+    });
+
+    const aiSummary = JSON.parse(response.output_text);
+
+    console.log("Real AI summary created:", aiSummary);
+
+    res.json({
+      message: "AI case summary created successfully",
+      summary: aiSummary
+    });
+
+  } catch (error) {
+    console.error("AI summary error:", error);
+
+    res.status(500).json({
+      message: "Unable to create AI case summary",
+      error: error.message
+    });
+  }
+});
+const PORT = 5000;
+
+app.listen(PORT, () => {
+  console.log(
+    `Medical Era backend running on http://localhost:${PORT}`
+  );
+});
