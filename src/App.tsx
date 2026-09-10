@@ -767,7 +767,7 @@ onAnswersSubmitted={(a, c) => {
   setPatientAnswers(a);
   setPatientComplaint(c);
 
-  fetch("http://localhost:5000/api/patient", {
+  fetch("https://medical-era.onrender.com/api/patient", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -785,7 +785,7 @@ onAnswersSubmitted={(a, c) => {
     .catch((error) => {
       console.error("Backend error:", error);
     });
-    fetch("http://localhost:5000/api/ai-summary", {
+    fetch("https://medical-era.onrender.com/api/ai-summary", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
