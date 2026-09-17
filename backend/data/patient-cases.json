@@ -1,0 +1,42 @@
+[
+    {
+        "id":  1789484280960,
+        "complaint":  "i have headache and eye pain problem",
+        "answers":  {
+                        "onset":  "Yesterday",
+                        "trend":  "Getting worse",
+                        "severity":  "Moderate — affecting my routine",
+                        "medicines":  "No",
+                        "other_symptoms":  [
+                                               "Difficulty sleeping"
+                                           ]
+                    },
+        "uploadedFiles":  [
+
+                          ],
+        "submittedAt":  "2026-09-15T14:58:00.960Z",
+        "status":  "Reviewed"
+    },
+    {
+        "id":  1789492365692,
+        "fullName":  "preeti vardhan",
+        "age":  "29",
+        "gender":  "Female",
+        "phone":  "9672163266",
+        "complaint":  "eye strain",
+        "answers":  {
+                        "onset":  "Yesterday",
+                        "trend":  "Getting worse",
+                        "severity":  "Severe — hard to function",
+                        "medicines":  "No",
+                        "other_symptoms":  [
+                                               "Sensitivity to light"
+                                           ]
+                    },
+        "uploadedFiles":  [
+
+                          ],
+        "submittedAt":  "2026-09-15T17:12:45.692Z",
+        "status":  "New"
+    }
+]
