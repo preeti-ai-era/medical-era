@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+<<<<<<< HEAD
 
 const app = express();
 
@@ -14,6 +15,62 @@ const client = new OpenAI({
 });
 
 let latestPatientCase = null;
+=======
+const { Pool } = require("pg");
+
+const app = express();
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required to start the Medical Era backend.");
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production"
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
+
+app.use(cors());
+app.use(express.json());
+
+const client = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
+async function initializeDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS patient_cases (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT '',
+      age TEXT NOT NULL DEFAULT '',
+      gender TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL DEFAULT '',
+      complaint TEXT NOT NULL DEFAULT '',
+      answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+      "uploadedFiles" JSONB NOT NULL DEFAULT '[]'::jsonb,
+      "submittedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Reviewed'))
+    )
+  `);
+}
+
+function mapPatientCase(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    fullName: row.name,
+    age: row.age,
+    gender: row.gender,
+    phone: row.phone,
+    complaint: row.complaint,
+    answers: row.answers,
+    uploadedFiles: row.uploadedFiles,
+    submittedAt: new Date(row.submittedAt).toISOString(),
+    status: row.status,
+  };
+}
+>>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 
 // Test backend
 app.get("/", (req, res) => {
@@ -23,6 +80,7 @@ app.get("/", (req, res) => {
 });
 
 // Patient submits a case
+<<<<<<< HEAD
 app.post("/api/patient", (req, res) => {
   latestPatientCase = {
     ...req.body,
@@ -42,10 +100,109 @@ app.get("/api/patient/latest", (req, res) => {
   res.json({
     case: latestPatientCase,
   });
+=======
+app.post("/api/patient", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+        INSERT INTO patient_cases
+          (name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", status)
+        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, 'New')
+        RETURNING *
+      `,
+      [
+        req.body.fullName || req.body.name || "",
+        req.body.age || "",
+        req.body.gender || "",
+        req.body.phone || "",
+        req.body.complaint || "",
+        JSON.stringify(req.body.answers || {}),
+        JSON.stringify(req.body.uploadedFiles || []),
+        new Date().toISOString(),
+      ],
+    );
+
+    const patientCase = mapPatientCase(result.rows[0]);
+    console.log("Patient case received:", patientCase);
+
+    res.status(201).json({
+      message: "Patient data received successfully",
+      case: patientCase,
+    });
+  } catch (error) {
+    console.error("Patient case creation error:", error);
+    res.status(500).json({ message: "Unable to save patient case" });
+  }
+});
+
+// Doctor retrieves all patient cases
+app.get("/api/patient", async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM patient_cases ORDER BY "submittedAt" DESC, id DESC',
+    );
+    res.json({ cases: result.rows.map(mapPatientCase) });
+  } catch (error) {
+    console.error("Patient case list error:", error);
+    res.status(500).json({ message: "Unable to load patient cases" });
+  }
+});
+
+// Doctor retrieves one patient case
+app.get("/api/patient/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM patient_cases WHERE id = $1",
+      [req.params.id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Patient case not found" });
+    }
+
+    res.json({ case: mapPatientCase(result.rows[0]) });
+  } catch (error) {
+    console.error("Patient case lookup error:", error);
+    res.status(500).json({ message: "Unable to load patient case" });
+  }
+});
+
+// Doctor updates a patient case status
+app.patch("/api/patient/:id/status", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+        UPDATE patient_cases
+        SET status = $1
+        WHERE id = $2
+        RETURNING *
+      `,
+      [req.body.status === "Reviewed" ? "Reviewed" : "New", req.params.id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Patient case not found" });
+    }
+
+    res.json({ case: mapPatientCase(result.rows[0]) });
+  } catch (error) {
+    console.error("Patient case status update error:", error);
+    res.status(500).json({ message: "Unable to update patient case status" });
+  }
+>>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 });
 
 // AI creates a structured case summary
 app.post("/api/ai-summary", async (req, res) => {
+<<<<<<< HEAD
+=======
+  if (!client) {
+    return res.status(503).json({
+      message: "AI summary is unavailable because OPENAI_API_KEY is not configured on the backend.",
+    });
+  }
+
+>>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
   try {
     const { complaint, answers, uploadedFiles } = req.body;
 
@@ -201,10 +358,28 @@ Every finding must be based only on information provided by the patient.
   }
 });
 
+<<<<<<< HEAD
 const PORT = 5000;
 
 app.listen(PORT, () => {
   console.log(
     `Medical Era backend running on http://localhost:${PORT}`
   );
+=======
+
+const PORT = process.env.PORT || 5000;
+
+async function startServer() {
+  await initializeDatabase();
+  app.listen(PORT, () => {
+    console.log(
+      `Medical Era backend running on http://localhost:${PORT}`
+    );
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Unable to initialize Medical Era backend:", error);
+  process.exitCode = 1;
+>>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 });
