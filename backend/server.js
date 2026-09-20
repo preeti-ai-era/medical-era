@@ -3,19 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-<<<<<<< HEAD
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-let latestPatientCase = null;
-=======
 const { Pool } = require("pg");
 
 const app = express();
@@ -70,7 +57,6 @@ function mapPatientCase(row) {
     status: row.status,
   };
 }
->>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 
 // Test backend
 app.get("/", (req, res) => {
@@ -80,27 +66,6 @@ app.get("/", (req, res) => {
 });
 
 // Patient submits a case
-<<<<<<< HEAD
-app.post("/api/patient", (req, res) => {
-  latestPatientCase = {
-    ...req.body,
-    submittedAt: new Date().toISOString(),
-  };
-
-  console.log("Patient case received:", latestPatientCase);
-
-  res.json({
-    message: "Patient data received successfully",
-    case: latestPatientCase,
-  });
-});
-
-// Doctor retrieves the latest patient case
-app.get("/api/patient/latest", (req, res) => {
-  res.json({
-    case: latestPatientCase,
-  });
-=======
 app.post("/api/patient", async (req, res) => {
   try {
     const result = await pool.query(
@@ -189,20 +154,16 @@ app.patch("/api/patient/:id/status", async (req, res) => {
     console.error("Patient case status update error:", error);
     res.status(500).json({ message: "Unable to update patient case status" });
   }
->>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 });
 
 // AI creates a structured case summary
 app.post("/api/ai-summary", async (req, res) => {
-<<<<<<< HEAD
-=======
   if (!client) {
     return res.status(503).json({
       message: "AI summary is unavailable because OPENAI_API_KEY is not configured on the backend.",
     });
   }
 
->>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
   try {
     const { complaint, answers, uploadedFiles } = req.body;
 
@@ -358,28 +319,16 @@ Every finding must be based only on information provided by the patient.
   }
 });
 
-<<<<<<< HEAD
-const PORT = 5000;
-
-app.listen(PORT, () => {
-  console.log(
-    `Medical Era backend running on http://localhost:${PORT}`
-  );
-=======
-
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   await initializeDatabase();
   app.listen(PORT, () => {
-    console.log(
-      `Medical Era backend running on http://localhost:${PORT}`
-    );
+    console.log(`Medical Era backend running on http://localhost:${PORT}`);
   });
 }
 
 startServer().catch((error) => {
   console.error("Unable to initialize Medical Era backend:", error);
   process.exitCode = 1;
->>>>>>> b73a38b (Connect Medical Era backend to PostgreSQL)
 });
