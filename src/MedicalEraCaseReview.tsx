@@ -10,21 +10,6 @@ function CrossIcon() {
   );
 }
 
-const CASE = {
-  name: "Priya Sharma",
-  age: 34,
-  gender: "Female",
-  phone: "+91 98200 12345",
-  submittedAt: "Today, 9:14 AM",
-  status: "New",
-  whoFor: "Myself",
-  complaint:
-    "Persistent headache and mild fever for two days. No known allergies. Currently on no medicines.",
-  medicines: "None",
-  allergies: "None known",
-  documents: [],
-};
-
 type DraftFields = {
   chiefComplaint: string;
   duration: string;
@@ -702,18 +687,37 @@ function EditableField({ label, value, onChange }: { label: string; value: strin
 export default function MedicalEraCaseReview({
   onBack,
   onMarkReviewed,
+  reviewError = "",
+  isMarkingReviewed = false,
   patientUploads = [],
   patientAnswers = {},
   patientComplaint = "",
+  patientName = "Patient",
+  patientAge,
+  patientGender,
+  patientPhone,
+  patientSubmittedAt,
+  patientStatus = "New",
 }: {
   onBack: () => void;
   onMarkReviewed?: () => void;
+  reviewError?: string;
+  isMarkingReviewed?: boolean;
   patientUploads?: UploadedFile[];
   patientAnswers?: Answers;
   patientComplaint?: string;
+  patientName?: string;
+  patientAge?: number | string;
+  patientGender?: string;
+  patientPhone?: string;
+  patientSubmittedAt?: string;
+  patientStatus?: "New" | "Reviewed";
 }) {
   const [draft, setDraft] = useState(() => buildDraft(patientComplaint, patientAnswers, patientUploads));
   const [previewDoc, setPreviewDoc] = useState<UploadedFile | null>(null);
+  const medicines = typeof patientAnswers.medicines === "string" ? patientAnswers.medicines : "Not provided";
+  const displayName = patientName || "Patient";
+  const initials = displayName.split(" ").map((namePart) => namePart[0]).join("").slice(0, 2).toUpperCase();
 
   function setField(key: keyof DraftFields) {
     return (value: string) => setDraft((d) => ({ ...d, [key]: value }));
@@ -759,7 +763,7 @@ export default function MedicalEraCaseReview({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="me-heading text-sm font-semibold" style={{ color: "#0c2340" }}>Dr. Anand Mehta</p>
+            <p className="me-heading text-sm font-semibold" style={{ color: "#0c2340" }}>Dr. Anand Milind</p>
             <p className="me-body text-xs" style={{ color: "#94a3b8" }}>General Physician</p>
           </div>
           <div
@@ -797,14 +801,16 @@ export default function MedicalEraCaseReview({
               Case Review
             </h1>
             <p className="me-body text-sm mt-0.5" style={{ color: "#64748b" }}>
-              Submitted {CASE.submittedAt}
+              Submitted {patientSubmittedAt ? new Date(patientSubmittedAt).toLocaleString("en-IN") : "Not provided"}
             </p>
           </div>
           <span
             className="me-body text-xs font-semibold px-3 py-1.5 rounded-full"
-            style={{ backgroundColor: "#fef9c3", color: "#854d0e" }}
+            style={patientStatus === "Reviewed"
+              ? { backgroundColor: "#dcfce7", color: "#15803d" }
+              : { backgroundColor: "#fef9c3", color: "#854d0e" }}
           >
-            {CASE.status}
+            {patientStatus}
           </span>
         </div>
 
@@ -820,23 +826,23 @@ export default function MedicalEraCaseReview({
                 className="w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
                 style={{ backgroundColor: "#f0f7ff", color: "#1a6fa8" }}
               >
-                {CASE.name.split(" ").map((n) => n[0]).join("")}
+                {initials}
               </div>
               <div>
-                <p className="me-heading text-lg font-bold" style={{ color: "#0c2340" }}>{CASE.name}</p>
+                <p className="me-heading text-lg font-bold" style={{ color: "#0c2340" }}>{displayName}</p>
                 <p className="me-body text-sm" style={{ color: "#64748b" }}>
-                  Age {CASE.age} · {CASE.gender}
+                  Age {patientAge !== undefined && patientAge !== "" ? patientAge : "Not provided"} · {patientGender || "Not provided"}
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="me-label mb-1">Phone</p>
-                <p className="me-value">{CASE.phone}</p>
+                <p className="me-value">{patientPhone || "Not provided"}</p>
               </div>
               <div>
                 <p className="me-label mb-1">Attending for</p>
-                <p className="me-value">{CASE.whoFor}</p>
+                <p className="me-value">Not provided</p>
               </div>
             </div>
           </div>
@@ -848,7 +854,7 @@ export default function MedicalEraCaseReview({
           >
             <p className="me-label mb-3">Main complaint</p>
             <p className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>
-              {CASE.complaint}
+              {patientComplaint || "Not provided"}
             </p>
           </div>
 
@@ -860,14 +866,14 @@ export default function MedicalEraCaseReview({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <p className="me-label mb-2">Current medicines</p>
-                <p className="me-body text-sm" style={{ color: CASE.medicines === "None" ? "#94a3b8" : "#1e3a52" }}>
-                  {CASE.medicines}
+                <p className="me-body text-sm" style={{ color: medicines === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                  {medicines}
                 </p>
               </div>
               <div>
                 <p className="me-label mb-2">Known allergies</p>
-                <p className="me-body text-sm" style={{ color: CASE.allergies === "None known" ? "#94a3b8" : "#dc2626" }}>
-                  {CASE.allergies}
+                <p className="me-body text-sm" style={{ color: "#94a3b8" }}>
+                  Not provided
                 </p>
               </div>
             </div>
@@ -992,7 +998,7 @@ export default function MedicalEraCaseReview({
           </div>
 
           {/* Contact Patient */}
-          <ContactPatientPanel patientName={CASE.name} />
+          <ContactPatientPanel patientName={displayName} />
 
           {/* Doctor action bar */}
           <div
@@ -1003,14 +1009,20 @@ export default function MedicalEraCaseReview({
               <span className="font-semibold">Ready to consult?</span>{" "}
               Mark this case as reviewed after your appointment.
             </p>
+            {reviewError && (
+              <p className="me-body text-xs font-medium w-full" style={{ color: "#b91c1c" }}>
+                {reviewError}
+              </p>
+            )}
             <button
+              disabled={isMarkingReviewed}
               className="me-body text-sm font-semibold px-5 py-2.5 rounded-xl shrink-0 transition-all"
-              style={{ backgroundColor: "#1a6fa8", color: "white", boxShadow: "0 2px 8px rgba(26,111,168,0.25)" }}
+              style={{ backgroundColor: isMarkingReviewed ? "#7ab8d8" : "#1a6fa8", color: "white", boxShadow: "0 2px 8px rgba(26,111,168,0.25)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#155e90")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#1a6fa8")}
               onClick={onMarkReviewed}
             >
-              Mark as reviewed
+              {isMarkingReviewed ? "Saving…" : "Mark as reviewed"}
             </button>
           </div>
 
