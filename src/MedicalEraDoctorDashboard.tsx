@@ -1,4 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const PATIENT_CASES_URL = "https://medical-era.onrender.com/api/patient";
+
+export type PatientCase = {
+  id: number;
+  name?: string;
+  fullName?: string;
+  age?: number | string;
+  gender?: string;
+  phone?: string;
+  complaint?: string;
+  answers?: Record<string, string | string[]>;
+  uploadedFiles?: unknown[];
+  submittedAt?: string;
+  status: "New" | "Reviewed";
+};
 
 function CrossIcon() {
   return (
@@ -9,18 +25,57 @@ function CrossIcon() {
   );
 }
 
-const SAMPLE_CASES = [
-  {
-    id: 1,
-    name: "Priya Sharma",
-    age: 34,
-    complaint: "Persistent headache and mild fever for two days. No known allergies. Currently on no medicines.",
-    submittedAt: "Today, 9:14 AM",
-    status: "New" as const,
-  },
-];
+export default function MedicalEraDoctorDashboard({
+  onReviewCase,
+  caseStatus: _caseStatus,
+}: {
+  onReviewCase?: (patientCase: PatientCase) => void;
+  caseStatus?: "New" | "Reviewed";
+}) {
+  const [cases, setCases] = useState<PatientCase[]>([]);
+  const [activeTab, setActiveTab] = useState<"All" | "New" | "Reviewed">("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "New" }: { onReviewCase?: () => void; caseStatus?: "New" | "Reviewed" }) {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCases() {
+      try {
+        const response = await fetch(PATIENT_CASES_URL);
+        if (!response.ok) {
+          throw new Error(`Unable to load patient cases (${response.status})`);
+        }
+        const data: { cases?: PatientCase[] } = await response.json();
+        if (!cancelled) {
+          setCases(data.cases || []);
+          setError("");
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          console.error("Unable to load patient cases:", loadError);
+          setError("Unable to load patient cases right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadCases();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredCases = activeTab === "All"
+    ? cases
+    : cases.filter((patientCase) => patientCase.status === activeTab);
+  const newCount = cases.filter((patientCase) => patientCase.status === "New").length;
+  const reviewedCount = cases.filter((patientCase) => patientCase.status === "Reviewed").length;
+
   return (
     <div
       className="min-h-full flex flex-col"
@@ -87,15 +142,22 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
               className="rounded-xl px-4 py-3 text-center"
               style={{ backgroundColor: "white", border: "1px solid #e2eaf3", minWidth: 72 }}
             >
-              <p className="me-heading text-xl font-bold" style={{ color: "#1a6fa8" }}>{caseStatus === "New" ? 1 : 0}</p>
+              <p className="me-heading text-xl font-bold" style={{ color: "#1a6fa8" }}>{newCount}</p>
               <p className="me-body text-xs" style={{ color: "#94a3b8" }}>New</p>
             </div>
             <div
               className="rounded-xl px-4 py-3 text-center"
               style={{ backgroundColor: "white", border: "1px solid #e2eaf3", minWidth: 72 }}
             >
-              <p className="me-heading text-xl font-bold" style={{ color: "#0c2340" }}>1</p>
+              <p className="me-heading text-xl font-bold" style={{ color: "#0c2340" }}>{cases.length}</p>
               <p className="me-body text-xs" style={{ color: "#94a3b8" }}>Total</p>
+            </div>
+            <div
+              className="rounded-xl px-4 py-3 text-center"
+              style={{ backgroundColor: "white", border: "1px solid #e2eaf3", minWidth: 72 }}
+            >
+              <p className="me-heading text-xl font-bold" style={{ color: "#15803d" }}>{reviewedCount}</p>
+              <p className="me-body text-xs" style={{ color: "#94a3b8" }}>Reviewed</p>
             </div>
           </div>
         </div>
@@ -105,12 +167,13 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
           {["All", "New", "Reviewed"].map((tab) => (
             <button
               key={tab}
+              onClick={() => setActiveTab(tab as "All" | "New" | "Reviewed")}
               className="me-body text-sm font-medium px-4 py-1.5 rounded-full transition-colors"
               style={{
-                backgroundColor: tab === "All" ? "#1a6fa8" : "white",
-                color: tab === "All" ? "white" : "#64748b",
+                backgroundColor: activeTab === tab ? "#1a6fa8" : "white",
+                color: activeTab === tab ? "white" : "#64748b",
                 border: "1px solid",
-                borderColor: tab === "All" ? "#1a6fa8" : "#e2eaf3",
+                borderColor: activeTab === tab ? "#1a6fa8" : "#e2eaf3",
               }}
             >
               {tab}
@@ -120,9 +183,18 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
 
         {/* Case list */}
         <div className="flex flex-col gap-4">
-          {SAMPLE_CASES.map((c) => (
+          {filteredCases.map((patientCase) => {
+            const patientName = patientCase.name || patientCase.fullName || "Patient";
+            const initials = patientName
+              .split(" ")
+              .map((part) => part[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+
+            return (
             <div
-              key={c.id}
+              key={patientCase.id}
               className="rounded-2xl p-6"
               style={{
                 backgroundColor: "white",
@@ -137,24 +209,24 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
                     style={{ backgroundColor: "#f0f7ff", color: "#1a6fa8" }}
                   >
-                    {c.name.split(" ").map((n) => n[0]).join("")}
+                    {initials}
                   </div>
                   <div>
                     <p className="me-heading font-semibold text-base" style={{ color: "#0c2340" }}>
-                      {c.name}
+                      {patientName}
                     </p>
                     <p className="me-body text-xs" style={{ color: "#94a3b8" }}>
-                      Age {c.age}
+                      {patientCase.age !== undefined && patientCase.age !== "" ? `Age ${patientCase.age}` : "Age not provided"}
                     </p>
                   </div>
                 </div>
                 <span
                   className="me-body text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
-                  style={caseStatus === "Reviewed"
+                  style={patientCase.status === "Reviewed"
                     ? { backgroundColor: "#dcfce7", color: "#15803d" }
                     : { backgroundColor: "#fef9c3", color: "#854d0e" }}
                 >
-                  {caseStatus}
+                  {patientCase.status}
                 </span>
               </div>
 
@@ -167,7 +239,7 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
                   Main complaint
                 </p>
                 <p className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>
-                  {c.complaint}
+                  {patientCase.complaint || "No complaint provided."}
                 </p>
               </div>
 
@@ -179,7 +251,7 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
                     <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <p className="me-body text-xs" style={{ color: "#94a3b8" }}>
-                    Submitted {c.submittedAt}
+                    Submitted {patientCase.submittedAt ? new Date(patientCase.submittedAt).toLocaleString("en-IN") : "Unknown"}
                   </p>
                 </div>
                 <button
@@ -191,19 +263,20 @@ export default function MedicalEraDoctorDashboard({ onReviewCase, caseStatus = "
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#155e90")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#1a6fa8")}
-                  onClick={onReviewCase}
+                  onClick={() => onReviewCase?.(patientCase)}
                 >
                   Review case
                 </button>
 
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty-state hint below the list */}
-        <p className="me-body text-xs text-center mt-8" style={{ color: "#c7ddf0" }}>
-          New patient submissions will appear here automatically.
+        <p className="me-body text-xs text-center mt-8" style={{ color: error ? "#b45309" : "#c7ddf0" }}>
+          {loading ? "Loading patient cases…" : error || (filteredCases.length === 0 ? "No patient cases in this category." : "New patient submissions will appear here automatically.")}
         </p>
       </main>
 
