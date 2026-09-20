@@ -4,6 +4,8 @@ import MedicalEraWhoFor from "./MedicalEraWhoFor";
 import MedicalEraDoctorDashboard from "./MedicalEraDoctorDashboard";
 import MedicalEraCaseReview from "./MedicalEraCaseReview";
 import MedicalEraAIFollowUp, { type UploadedFile, type Answers } from "./MedicalEraAIFollowUp";
+import { updatePatientCaseStatus } from "./api";
+import type { PatientCase } from "./MedicalEraDoctorDashboard";
 
 type ActiveApp = "grove" | "patient" | "doctor-login" | "doctor";
 type MedicalEraScreen = "welcome" | "who-for" | "step-2" | "follow-up";
@@ -562,18 +564,57 @@ function DoctorFlow({ switcher, patientUploads, patientAnswers, patientComplaint
   patientComplaint: string;
 }) {
   const [screen, setScreen] = useState<DoctorScreen>("dashboard");
-  const [caseStatus, setCaseStatus] = useState<"New" | "Reviewed">("New");
+  const [selectedCase, setSelectedCase] = useState<PatientCase | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [reviewError, setReviewError] = useState("");
+  const [isMarkingReviewed, setIsMarkingReviewed] = useState(false);
 
-  function markReviewed() {
-    setCaseStatus("Reviewed");
-    setScreen("dashboard");
+  function openCase(patientCase: PatientCase) {
+    setSelectedCase(patientCase);
+    setReviewError("");
+    setScreen("case-review");
+  }
+
+  async function markReviewed() {
+    if (!selectedCase || isMarkingReviewed) return;
+
+    setIsMarkingReviewed(true);
+    setReviewError("");
+    try {
+      const response = await updatePatientCaseStatus(selectedCase.id, "Reviewed");
+      if (response.case?.status !== "Reviewed") {
+        throw new Error("The backend did not confirm the case as Reviewed.");
+      }
+      setSelectedCase(response.case);
+      setRefreshKey((key) => key + 1);
+      setScreen("dashboard");
+    } catch (error) {
+      console.error("Unable to mark patient case as reviewed:", error);
+      setReviewError("The case could not be marked as reviewed. Please try again.");
+    } finally {
+      setIsMarkingReviewed(false);
+    }
   }
 
   return (
     <>
       {screen === "case-review"
-        ? <MedicalEraCaseReview onBack={() => setScreen("dashboard")} onMarkReviewed={markReviewed} patientUploads={patientUploads} patientAnswers={patientAnswers} patientComplaint={patientComplaint} />
-        : <MedicalEraDoctorDashboard onReviewCase={() => setScreen("case-review")} caseStatus={caseStatus} />}
+        ? <MedicalEraCaseReview
+            onBack={() => setScreen("dashboard")}
+            onMarkReviewed={markReviewed}
+            reviewError={reviewError}
+            isMarkingReviewed={isMarkingReviewed}
+            patientUploads={selectedCase?.uploadedFiles || patientUploads}
+            patientAnswers={selectedCase?.answers || patientAnswers}
+            patientComplaint={selectedCase?.complaint || patientComplaint}
+            patientName={selectedCase?.name || selectedCase?.fullName}
+            patientAge={selectedCase?.age}
+            patientGender={selectedCase?.gender}
+            patientPhone={selectedCase?.phone}
+            patientSubmittedAt={selectedCase?.submittedAt}
+            patientStatus={selectedCase?.status || "New"}
+          />
+        : <MedicalEraDoctorDashboard onReviewCase={openCase} refreshKey={refreshKey} />}
       {switcher}
     </>
   );
@@ -719,19 +760,6 @@ const PRINCIPLES = [
   { heading: "Not a prescriber.", body: "Grove is an educational reference. Confirm with your hospital formulary, a licensed prescriber, and current guidelines." },
 ];
 
-// Demo patient data for Priya Sharma — pre-populated so the Doctor Case Review
-// shows real information even before the patient completes the live intake flow.
-const DEMO_COMPLAINT =
-  "I have had a persistent headache and mild fever for the past two to three days. I have no known allergies and I am not currently taking any medicines.";
-
-const DEMO_ANSWERS: Answers = {
-  onset: "2–3 days ago",
-  trend: "About the same",
-  severity: "Moderate — affecting my routine",
-  medicines: "No",
-  other_symptoms: ["None of these"],
-};
-
 export default function App() {
   const [activeApp, setActiveApp] = useState<ActiveApp>("patient");
   const [doctorAuthenticated, setDoctorAuthenticated] = useState(false);
@@ -739,8 +767,8 @@ export default function App() {
   const [agentMode, setAgentMode] = useState<AgentMode>("Explain");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [patientUploads, setPatientUploads] = useState<UploadedFile[]>([]);
-  const [patientAnswers, setPatientAnswers] = useState<Answers>(DEMO_ANSWERS);
-  const [patientComplaint, setPatientComplaint] = useState(DEMO_COMPLAINT);
+  const [patientAnswers, setPatientAnswers] = useState<Answers>({});
+  const [patientComplaint, setPatientComplaint] = useState("");
 
   function goToDoctor() {
     // Always require login — never bypass to dashboard directly

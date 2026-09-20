@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { UploadedFile } from "./MedicalEraAIFollowUp";
 
 const PATIENT_CASES_URL = "https://medical-era.onrender.com/api/patient";
 
@@ -11,7 +12,7 @@ export type PatientCase = {
   phone?: string;
   complaint?: string;
   answers?: Record<string, string | string[]>;
-  uploadedFiles?: unknown[];
+  uploadedFiles?: UploadedFile[];
   submittedAt?: string;
   status: "New" | "Reviewed";
 };
@@ -27,10 +28,10 @@ function CrossIcon() {
 
 export default function MedicalEraDoctorDashboard({
   onReviewCase,
-  caseStatus: _caseStatus,
+  refreshKey = 0,
 }: {
   onReviewCase?: (patientCase: PatientCase) => void;
-  caseStatus?: "New" | "Reviewed";
+  refreshKey?: number;
 }) {
   const [cases, setCases] = useState<PatientCase[]>([]);
   const [activeTab, setActiveTab] = useState<"All" | "New" | "Reviewed">("All");
@@ -68,7 +69,7 @@ export default function MedicalEraDoctorDashboard({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const filteredCases = activeTab === "All"
     ? cases
@@ -113,7 +114,7 @@ export default function MedicalEraDoctorDashboard({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="me-heading text-sm font-semibold" style={{ color: "#0c2340" }}>Dr. Anand Mehta</p>
+            <p className="me-heading text-sm font-semibold" style={{ color: "#0c2340" }}>Dr. Anand Milind</p>
             <p className="me-body text-xs" style={{ color: "#94a3b8" }}>General Physician</p>
           </div>
           <div
@@ -239,7 +240,7 @@ export default function MedicalEraDoctorDashboard({
                   Main complaint
                 </p>
                 <p className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>
-                  {patientCase.complaint || "No complaint provided."}
+                  {patientCase.complaint || "Not provided"}
                 </p>
               </div>
 
@@ -251,7 +252,7 @@ export default function MedicalEraDoctorDashboard({
                     <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <p className="me-body text-xs" style={{ color: "#94a3b8" }}>
-                    Submitted {patientCase.submittedAt ? new Date(patientCase.submittedAt).toLocaleString("en-IN") : "Unknown"}
+                    Submitted {patientCase.submittedAt ? new Date(patientCase.submittedAt).toLocaleString("en-IN") : "Not provided"}
                   </p>
                 </div>
                 <button
