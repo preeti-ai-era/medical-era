@@ -684,6 +684,36 @@ function EditableField({ label, value, onChange }: { label: string; value: strin
   );
 }
 
+const SUBMITTED_INFO_LABELS: Record<string, string> = {
+  onset: "Onset / when it started",
+  trend: "How it has changed",
+  severity: "Current severity",
+  medicines: "Current medicines",
+  other_symptoms: "Other symptoms",
+};
+
+function formatAnswerValue(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    const cleaned = value.filter((entry) => typeof entry === "string" && entry.trim().length > 0);
+    return cleaned.length > 0 ? cleaned.join(", ") : "Not provided";
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  return "Not provided";
+}
+
+function getPatientAllergies(complaint: string, answers: Answers): string {
+  const answerValue = formatAnswerValue(answers.allergies);
+  if (answerValue !== "Not provided") return answerValue;
+
+  if (/no\s+(known\s+)?allerg\w*/i.test(complaint)) {
+    return "No known allergies";
+  }
+
+  return "Not provided";
+}
+
 export default function MedicalEraCaseReview({
   onBack,
   onMarkReviewed,
@@ -715,9 +745,21 @@ export default function MedicalEraCaseReview({
 }) {
   const [draft, setDraft] = useState(() => buildDraft(patientComplaint, patientAnswers, patientUploads));
   const [previewDoc, setPreviewDoc] = useState<UploadedFile | null>(null);
-  const medicines = typeof patientAnswers.medicines === "string" ? patientAnswers.medicines : "Not provided";
   const displayName = patientName || "Patient";
   const initials = displayName.split(" ").map((namePart) => namePart[0]).join("").slice(0, 2).toUpperCase();
+  const medicines = formatAnswerValue(patientAnswers.medicines);
+  const allergies = getPatientAllergies(patientComplaint, patientAnswers);
+  const otherSymptoms = formatAnswerValue(patientAnswers.other_symptoms);
+  const timeline = [
+    formatAnswerValue(patientAnswers.onset),
+    formatAnswerValue(patientAnswers.trend),
+    formatAnswerValue(patientAnswers.severity),
+  ].filter((value) => value !== "Not provided").join(" · ") || "Not provided";
+  const submittedHistoryEntries = Object.entries(patientAnswers).map(([key, value]) => ({
+    key,
+    label: SUBMITTED_INFO_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    value: formatAnswerValue(value),
+  }));
 
   function setField(key: keyof DraftFields) {
     return (value: string) => setDraft((d) => ({ ...d, [key]: value }));
@@ -847,6 +889,70 @@ export default function MedicalEraCaseReview({
             </div>
           </div>
 
+          {/* Submitted patient information */}
+          <div
+            className="rounded-2xl p-6"
+            style={{ backgroundColor: "white", border: "1px solid #e2eaf3", boxShadow: "0 2px 8px rgba(10,40,80,0.06)" }}
+          >
+            <p className="me-label mb-4">Submitted patient information</p>
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="me-label mb-1.5">Main complaint</p>
+                <p className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>
+                  {patientComplaint || "Not provided"}
+                </p>
+              </div>
+              <div className="h-px" style={{ backgroundColor: "#f0f4f8" }} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <p className="me-label mb-1.5">Current medicines</p>
+                  <p className="me-body text-sm" style={{ color: medicines === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                    {medicines}
+                  </p>
+                </div>
+                <div>
+                  <p className="me-label mb-1.5">Allergies</p>
+                  <p className="me-body text-sm" style={{ color: allergies === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                    {allergies}
+                  </p>
+                </div>
+              </div>
+              <div className="h-px" style={{ backgroundColor: "#f0f4f8" }} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <p className="me-label mb-1.5">Other symptoms</p>
+                  <p className="me-body text-sm" style={{ color: otherSymptoms === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                    {otherSymptoms}
+                  </p>
+                </div>
+                <div>
+                  <p className="me-label mb-1.5">Onset / duration / timeline</p>
+                  <p className="me-body text-sm" style={{ color: timeline === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                    {timeline}
+                  </p>
+                </div>
+              </div>
+              {submittedHistoryEntries.length > 0 && (
+                <>
+                  <div className="h-px" style={{ backgroundColor: "#f0f4f8" }} />
+                  <div>
+                    <p className="me-label mb-2">All submitted answers / history</p>
+                    <div className="flex flex-col gap-2.5">
+                      {submittedHistoryEntries.map(({ key, label, value }) => (
+                        <div key={key} className="rounded-xl px-3 py-2.5" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+                          <p className="me-label mb-1" style={{ lineHeight: 1.3 }}>{label}</p>
+                          <p className="me-body text-sm leading-relaxed" style={{ color: value === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                            {value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Main complaint */}
           <div
             className="rounded-2xl p-6"
@@ -872,8 +978,8 @@ export default function MedicalEraCaseReview({
               </div>
               <div>
                 <p className="me-label mb-2">Known allergies</p>
-                <p className="me-body text-sm" style={{ color: "#94a3b8" }}>
-                  Not provided
+                <p className="me-body text-sm" style={{ color: allergies === "Not provided" ? "#94a3b8" : "#1e3a52" }}>
+                  {allergies}
                 </p>
               </div>
             </div>
