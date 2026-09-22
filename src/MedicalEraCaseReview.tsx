@@ -113,48 +113,102 @@ interface Finding {
   medicalRef: string;
 }
 
-const AI_FINDINGS: Finding[] = [
-  {
-    id: "f1",
-    priority: "red",
-    title: "Fever with headache — duration warrants clinical assessment",
-    detected: "Co-occurrence of headache and fever persisting for 2–3 days with no improvement trend and no medicines taken.",
-    basedOn: [
-      { quote: "\"I have had a persistent headache and mild fever for the past two to three days.\"", source: "Patient intake" },
-      { quote: "Onset: \"2–3 days ago\"", source: "AI follow-up response" },
-      { quote: "Trend: \"About the same\" (no improvement reported)", source: "AI follow-up response" },
-      { quote: "Severity: \"Moderate — affecting my routine\"", source: "AI follow-up response" },
-      { quote: "Medicines: \"No\" (no medicines taken for this problem)", source: "AI follow-up response" },
-    ],
-    whyFlagged: "A multi-day history of concurrent headache and fever in an otherwise untreated patient was noted by the AI. The combination, duration, and absence of any self-treatment were flagged for doctor review. All clinical decisions are made by the doctor.",
-    medicalRef: "Reference not connected in prototype.",
-  },
-  {
-    id: "f2",
-    priority: "orange",
-    title: "No current medicines or prior history reported — completeness unclear",
-    detected: "Patient reported no current medicines and provided no prior medical history. The intake did not collect conditions, past diagnoses, or intermittent medications.",
-    basedOn: [
-      { quote: "\"I am not currently taking any medicines.\"", source: "Patient intake" },
-      { quote: "Medicines for this problem: \"No\"", source: "AI follow-up response" },
-      { quote: "Additional symptoms: \"None of these\"", source: "AI follow-up response" },
-      { quote: "No documents uploaded (no prescription, no reports)", source: "Patient intake" },
-    ],
-    whyFlagged: "The absence of any medication or prior history may be accurate, or may indicate an incomplete submission. The AI flagged this so the doctor can verbally verify whether the patient has any ongoing conditions, periodic medications, or relevant history not captured in the intake.",
-    medicalRef: "Reference not connected in prototype.",
-  },
-  {
-    id: "f3",
-    priority: "green",
-    title: "No allergy risk identified from submitted information",
-    detected: "Patient explicitly reported no known allergies in the intake description.",
-    basedOn: [
-      { quote: "\"I have no known allergies.\"", source: "Patient intake" },
-    ],
-    whyFlagged: "No allergy-related risk was identified from the submitted information. \"No priority issue identified\" means only that no priority issue was detected from the available submitted information — it does not confirm that the patient has no allergies. Doctor to verify verbally at consultation.",
-    medicalRef: "Reference not connected in prototype.",
-  },
-];
+function normalizeEvidenceText(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    return value.filter((entry) => typeof entry === "string" && entry.trim().length > 0).join(", ");
+  }
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  return "";
+}
+
+function buildPriorityFindings(complaint: string, answers: Answers, uploads: UploadedFile[]): Finding[] {
+  const normalizedComplaint = complaint.trim();
+  const onset = normalizeEvidenceText(answers.onset);
+  const trend = normalizeEvidenceText(answers.trend);
+  const severity = normalizeEvidenceText(answers.severity);
+  const medicines = normalizeEvidenceText(answers.medicines);
+  const otherSymptoms = normalizeEvidenceText(answers.other_symptoms);
+  const allergyValue = normalizeEvidenceText(answers.allergies);
+  const prescriptionFiles = uploads.filter((u) => u.category.toLowerCase().includes("prescription"));
+  const reportFiles = uploads.filter((u) =>
+    u.category.toLowerCase().includes("report") ||
+    u.category.toLowerCase().includes("opd") ||
+    u.category.toLowerCase().includes("photo")
+  );
+
+  const evidence: FindingEvidence[] = [];
+
+  if (normalizedComplaint) {
+    evidence.push({ quote: `"${normalizedComplaint}"`, source: "Patient intake" });
+  }
+
+  if (onset) evidence.push({ quote: `Onset: "${onset}"`, source: "AI follow-up response" });
+  if (trend) evidence.push({ quote: `Trend: "${trend}"`, source: "AI follow-up response" });
+  if (severity) evidence.push({ quote: `Severity: "${severity}"`, source: "AI follow-up response" });
+  if (medicines) evidence.push({ quote: `Current medicines: "${medicines}"`, source: "AI follow-up response" });
+  if (otherSymptoms) evidence.push({ quote: `Other symptoms: "${otherSymptoms}"`, source: "AI follow-up response" });
+  if (allergyValue) evidence.push({ quote: `Allergies: "${allergyValue}"`, source: "AI follow-up response" });
+
+  if (prescriptionFiles.length > 0) {
+    evidence.push({
+      quote: `Uploaded prescription: ${prescriptionFiles.map((u) => u.file.name).join(", ")}`,
+      source: "Uploaded prescription",
+    });
+  }
+
+  if (reportFiles.length > 0) {
+    evidence.push({
+      quote: `Uploaded medical/diagnostic document: ${reportFiles.map((u) => u.file.name).join(", ")}`,
+      source: "Uploaded medical/diagnostic report",
+    });
+  }
+
+  const criticalFieldsMissing = [
+    !medicines ? "current medicines" : null,
+    !allergyValue ? "allergies" : null,
+    !onset && !trend && !severity ? "timeline/severity" : null,
+  ].filter(Boolean) as string[];
+
+  const findings: Finding[] = [];
+
+  if (normalizedComplaint && criticalFieldsMissing.length >= 2) {
+    const selectedEvidence = evidence.filter((entry) => entry.source === "Patient intake" || entry.source === "AI follow-up response");
+
+    findings.push({
+      id: "case-orange",
+      priority: "orange",
+      title: "Submitted information needs doctor clarification",
+      detected: `The submitted case includes a complaint, but key details such as ${criticalFieldsMissing.join(", ")} are not yet available for review.`,
+      basedOn: selectedEvidence.length > 0 ? selectedEvidence : [{ quote: normalizedComplaint || "No patient complaint was provided.", source: "Patient intake" }],
+      whyFlagged: "This flag is generated only from the selected case's actual submitted complaint, answers, medicines, allergies, and uploaded documents. The doctor may need to confirm missing information before concluding.",
+      medicalRef: "Reference not connected in prototype.",
+    });
+  }
+
+  if (findings.length === 0) {
+    const neutralEvidence: FindingEvidence[] = evidence.length > 0
+      ? evidence.slice(0, 3)
+      : [{ quote: normalizedComplaint || "No patient-provided information was available for priority review.", source: "Patient intake" }];
+
+    findings.push({
+      id: "case-green",
+      priority: "green",
+      title: "No priority issue identified from available information",
+      detected: normalizedComplaint
+        ? "No patient-specific priority pattern was identified from the submitted complaint, follow-up answers, medicines, allergies, or uploaded documents in this case."
+        : "No complaint or submitted information was available for priority review in this case.",
+      basedOn: neutralEvidence,
+      whyFlagged: "This means no patient-specific priority issue was detected from the selected case's available submitted information. It does not confirm the patient is healthy; the doctor remains responsible for clinical verification.",
+      medicalRef: "Reference not connected in prototype.",
+    });
+  }
+
+  return findings;
+}
 
 const PRIORITY_CONFIG: Record<FindingPriority, { dot: string; bg: string; border: string; statusLabel: string; statusBg: string; statusColor: string; statusBorder: string }> = {
   red: {
@@ -760,6 +814,7 @@ export default function MedicalEraCaseReview({
     label: SUBMITTED_INFO_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     value: formatAnswerValue(value),
   }));
+  const priorityFindings = buildPriorityFindings(patientComplaint, patientAnswers, patientUploads);
 
   function setField(key: keyof DraftFields) {
     return (value: string) => setDraft((d) => ({ ...d, [key]: value }));
@@ -1097,7 +1152,7 @@ export default function MedicalEraCaseReview({
             </div>
 
             <div className="flex flex-col gap-3">
-              {AI_FINDINGS.map((f) => (
+              {priorityFindings.map((f) => (
                 <FindingCard key={f.id} finding={f} />
               ))}
             </div>
