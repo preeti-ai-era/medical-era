@@ -585,9 +585,9 @@ function DoctorFlow({ switcher, patientUploads, patientAnswers, patientComplaint
       if (response.case?.status !== "Reviewed") {
         throw new Error("The backend did not confirm the case as Reviewed.");
       }
-      setSelectedCase(response.case);
-      setRefreshKey((key) => key + 1);
+      setSelectedCase(null);
       setScreen("dashboard");
+      setRefreshKey((key) => key + 1);
     } catch (error) {
       console.error("Unable to mark patient case as reviewed:", error);
       setReviewError("The case could not be marked as reviewed. Please try again.");

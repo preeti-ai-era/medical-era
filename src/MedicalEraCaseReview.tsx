@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"; // useEffect + useRef used in DocPreviewModal
 import type { UploadedFile, Answers } from "./MedicalEraAIFollowUp";
+import { buildPatientUnderstanding } from "./medicalEraReasoning.ts";
 
 function CrossIcon() {
   return (
@@ -111,6 +112,21 @@ interface Finding {
   basedOn: FindingEvidence[];
   whyFlagged: string;
   medicalRef: string;
+}
+
+function buildDepartmentRouting(complaint: string, answers: Answers) {
+  const understanding = buildPatientUnderstanding(complaint, answers);
+
+  return {
+    domain: understanding.routing.domainHypotheses.map((domain) => domain.domainId).join(", ") || "Other / unclear",
+    suggestedDepartment: understanding.routing.suggestedDepartment || "Department unclear — additional information needed",
+    reason: understanding.routing.reason,
+    followUpQuestions: understanding.candidateQuestions.map((question) => question.text),
+    supportingInformation: understanding.evidence.map((item) => item.quotedText || item.sourceId),
+    missingInformation: understanding.missingInformation.map((item) => item.field),
+    confidenceText: understanding.confidenceText,
+    moreInformationNeeded: understanding.moreInformationNeeded,
+  };
 }
 
 function normalizeEvidenceText(value: string | string[] | undefined): string {
@@ -814,6 +830,7 @@ export default function MedicalEraCaseReview({
     label: SUBMITTED_INFO_LABELS[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     value: formatAnswerValue(value),
   }));
+  const departmentRouting = buildDepartmentRouting(patientComplaint, patientAnswers);
   const priorityFindings = buildPriorityFindings(patientComplaint, patientAnswers, patientUploads);
 
   function setField(key: keyof DraftFields) {
@@ -1005,6 +1022,53 @@ export default function MedicalEraCaseReview({
                   </div>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* Clinical routing */}
+          <div
+            className="rounded-2xl p-6"
+            style={{ backgroundColor: "white", border: "1px solid #e2eaf3", boxShadow: "0 2px 8px rgba(10,40,80,0.06)" }}
+          >
+            <p className="me-label mb-4">Clinical routing</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="rounded-xl px-3 py-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+                <p className="me-label mb-1">Detected symptom domain</p>
+                <p className="me-body text-sm" style={{ color: "#1e3a52" }}>{departmentRouting.domain}</p>
+              </div>
+              <div className="rounded-xl px-3 py-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+                <p className="me-label mb-1">Suggested department</p>
+                <p className="me-body text-sm" style={{ color: "#1e3a52" }}>{departmentRouting.suggestedDepartment}</p>
+              </div>
+            </div>
+            <div className="rounded-xl px-3 py-3 mb-4" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+              <p className="me-label mb-1">Reason for routing</p>
+              <p className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>{departmentRouting.reason}</p>
+            </div>
+            <div className="rounded-xl px-3 py-3 mb-4" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+              <p className="me-label mb-1">Information supporting the suggestion</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {departmentRouting.supportingInformation.slice(0, 4).map((item, index) => (
+                  <li key={`${item}-${index}`} className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl px-3 py-3 mb-4" style={{ backgroundColor: departmentRouting.moreInformationNeeded ? "#fffbeb" : "#f8fafc", border: `1px solid ${departmentRouting.moreInformationNeeded ? "#fde68a" : "#e2eaf3"}` }}>
+              <p className="me-label mb-1">Information still missing</p>
+              <p className="me-body text-sm leading-relaxed" style={{ color: departmentRouting.moreInformationNeeded ? "#92400e" : "#64748b" }}>
+                {departmentRouting.moreInformationNeeded ? departmentRouting.missingInformation.join(", ") : "No required routing information is currently marked missing."}
+              </p>
+              <p className="me-body text-xs leading-relaxed mt-2" style={{ color: "#64748b" }}>{departmentRouting.confidenceText}</p>
+            </div>
+            <div className="rounded-xl px-3 py-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2eaf3" }}>
+              <p className="me-label mb-2">Relevant follow-up questions</p>
+              <ul className="list-disc pl-5 space-y-1.5">
+                {departmentRouting.followUpQuestions.map((question, index) => (
+                  <li key={`${question}-${index}`} className="me-body text-sm leading-relaxed" style={{ color: "#1e3a52" }}>
+                    {question}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
