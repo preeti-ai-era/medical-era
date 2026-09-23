@@ -1,4 +1,11 @@
 import { useState } from "react";
+import {
+  buildPatientUnderstanding,
+  getNextFollowUpQuestion,
+  type Answers,
+  type FollowUpQuestion,
+} from "./medicalEraReasoning";
+export type { Answers } from "./medicalEraReasoning";
 
 function CrossIcon() {
   return (
@@ -8,61 +15,6 @@ function CrossIcon() {
     </svg>
   );
 }
-
-type AnswerType = "single" | "multi" | "text";
-
-interface Question {
-  id: string;
-  text: string;
-  hint?: string;
-  type: AnswerType;
-  options?: string[];
-}
-
-const QUESTIONS: Question[] = [
-  {
-    id: "onset",
-    text: "When did this problem start?",
-    type: "single",
-    options: ["Today", "Yesterday", "2–3 days ago", "More than 3 days ago", "I'm not sure"],
-  },
-  {
-    id: "trend",
-    text: "Has it become better, worse, or stayed the same since it started?",
-    type: "single",
-    options: ["Getting better", "Getting worse", "About the same", "It comes and goes"],
-  },
-  {
-    id: "severity",
-    text: "How severe is it right now?",
-    type: "single",
-    options: ["Mild — manageable", "Moderate — affecting my routine", "Severe — hard to function"],
-  },
-  {
-    id: "medicines",
-    text: "Are you currently taking any medicines for this problem?",
-    hint: "Include any tablets, drops, or home remedies you have tried.",
-    type: "single",
-    options: ["Yes", "No", "I tried something but I'm not sure what it was"],
-  },
-  {
-    id: "other_symptoms",
-    text: "Do you have any of these additional symptoms?",
-    hint: "Select all that apply.",
-    type: "multi",
-    options: ["Nausea", "Vomiting", "Dizziness", "Fatigue", "Difficulty sleeping", "Sensitivity to light", "None of these"],
-  },
-];
-
-const QUESTION_LABELS: Record<string, string> = {
-  onset: "When it started",
-  trend: "How it has changed",
-  severity: "Current severity",
-  medicines: "Medicines taken",
-  other_symptoms: "Other symptoms",
-};
-
-export type Answers = Record<string, string | string[]>;
 
 function ProgressDots({ total, current }: { total: number; current: number }) {
   return (
@@ -116,7 +68,7 @@ function QuestionScreen({
   onBack,
   onNext,
 }: {
-  question: Question;
+  question: FollowUpQuestion;
   index: number;
   total: number;
   answer: string | string[] | undefined;
@@ -290,17 +242,16 @@ function ReviewScreen({
         </div>
 
         {/* Follow-up answers */}
-        {QUESTIONS.map((q) => {
-          const ans = answers[q.id];
+        {Object.entries(answers).map(([questionId, ans]) => {
           if (!ans) return null;
           const display = Array.isArray(ans) ? ans.join(", ") : ans;
           return (
             <div
-              key={q.id}
+              key={questionId}
               className="px-5 py-4"
               style={{ borderBottom: "1px solid #f0f4f8" }}
             >
-              <p className="me-label mb-1.5">{QUESTION_LABELS[q.id] ?? q.id}</p>
+              <p className="me-label mb-1.5">{questionId.replace(/_/g, " ")}</p>
               <p className="me-body text-sm" style={{ color: "#1e3a52" }}>{display}</p>
             </div>
           );
@@ -329,6 +280,21 @@ function ReviewScreen({
           )}
         </div>
       </div>
+
+      {(() => {
+        const understanding = buildPatientUnderstanding(complaint, answers);
+        return (
+          <div className="rounded-xl px-4 py-3" style={{ backgroundColor: understanding.moreInformationNeeded ? "#fffbeb" : "#f0fdf4", border: `1px solid ${understanding.moreInformationNeeded ? "#fde68a" : "#bbf7d0"}` }}>
+            <p className="me-label mb-1">AI-organized understanding</p>
+            <p className="me-body text-sm" style={{ color: "#1e3a52" }}>
+              Suggested clinical domain: {understanding.routing.domainHypotheses.map((domain) => domain.domainId).join(", ") || "Unclear"}. Suggested department: {understanding.routing.suggestedDepartment || "More information needed"}.
+            </p>
+            <p className="me-body text-xs mt-1" style={{ color: understanding.moreInformationNeeded ? "#92400e" : "#166534" }}>
+              {understanding.moreInformationNeeded ? "More information needed before staff verification." : "Available information is organized for clinician/staff verification."}
+            </p>
+          </div>
+        );
+      })()}
 
       <p className="me-body text-xs text-center" style={{ color: "#94a3b8" }}>
         AI has only organized the information you provided. No diagnosis or recommendation has been made. All medical decisions are made by your doctor.
@@ -585,6 +551,9 @@ export default function MedicalEraAIFollowUp({
   const [step, setStep] = useState<FlowStep>(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [uploads, setUploads] = useState<UploadedFile[]>([]);
+  const [askedQuestionIds, setAskedQuestionIds] = useState<string[]>([]);
+  const currentQuestion = getNextFollowUpQuestion(complaint, answers, askedQuestionIds);
+  const questionCount = askedQuestionIds.length + (currentQuestion ? 1 : 0);
 
   function setAnswer(id: string, value: string | string[]) {
     setAnswers((a) => ({ ...a, [id]: value }));
@@ -606,23 +575,30 @@ export default function MedicalEraAIFollowUp({
   }
 
   function goNext() {
-    const currentIndex = step as number;
-    if (currentIndex < QUESTIONS.length - 1) {
-      setStep(currentIndex + 1);
-    } else {
+    if (!currentQuestion) {
       setStep("upload");
+      return;
     }
+    setAskedQuestionIds((ids) => ids.includes(currentQuestion.id) ? ids : [...ids, currentQuestion.id]);
+    setStep(0);
   }
 
   function goBack() {
     if (step === "review") {
       setStep("upload");
     } else if (step === "upload") {
-      setStep(QUESTIONS.length - 1);
-    } else if ((step as number) === 0) {
+      setStep(0);
+    } else if (askedQuestionIds.length === 0) {
       onBack();
     } else {
-      setStep((step as number) - 1);
+      const previousQuestionId = askedQuestionIds[askedQuestionIds.length - 1];
+      setAskedQuestionIds((ids) => ids.slice(0, -1));
+      setAnswers((existing) => {
+        const next = { ...existing };
+        delete next[previousQuestionId];
+        return next;
+      });
+      setStep(0);
     }
   }
 
@@ -695,7 +671,7 @@ export default function MedicalEraAIFollowUp({
                 ? "100%"
                 : step === "upload"
                 ? "90%"
-                : `${((step as number) / QUESTIONS.length) * 85}%`,
+                : `${(askedQuestionIds.length / Math.max(questionCount, 1)) * 85}%`,
             backgroundColor: "#1a6fa8",
           }}
         />
@@ -754,15 +730,26 @@ export default function MedicalEraAIFollowUp({
                 onSkip={() => setStep("review")}
               />
             ) : (
-              <QuestionScreen
-                question={QUESTIONS[step as number]}
-                index={step as number}
-                total={QUESTIONS.length}
-                answer={answers[QUESTIONS[step as number].id]}
-                onAnswer={(v) => setAnswer(QUESTIONS[step as number].id, v)}
-                onBack={goBack}
-                onNext={goNext}
-              />
+              currentQuestion ? (
+                <QuestionScreen
+                  question={currentQuestion}
+                  index={askedQuestionIds.length}
+                  total={Math.max(questionCount, askedQuestionIds.length + 1)}
+                  answer={answers[currentQuestion.id]}
+                  onAnswer={(v) => setAnswer(currentQuestion.id, v)}
+                  onBack={goBack}
+                  onNext={goNext}
+                />
+              ) : (
+                <UploadScreen
+                  uploads={uploads}
+                  onAddFiles={addFiles}
+                  onRemoveFile={removeFile}
+                  onBack={goBack}
+                  onContinue={() => setStep("review")}
+                  onSkip={() => setStep("review")}
+                />
+              )
             )}
           </div>
 
