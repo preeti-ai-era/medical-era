@@ -784,6 +784,10 @@ export default function App() {
     setAgentResponse(getLocalEducationalResponse(query));
   }
 
+  function selectMainWardMode() {
+    setAgentMode("Ward");
+  }
+
   function openWardView() {
     setAgentMode("Ward");
     document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
@@ -1040,7 +1044,7 @@ onAnswersSubmitted={(a, c) => {
                 {AGENT_MODES.map((m) => (
                   <button
                     key={m}
-                    onClick={() => setAgentMode(m)}
+                    onClick={m === "Ward" ? selectMainWardMode : () => setAgentMode(m)}
                     className="flex-1 py-3 text-sm font-medium transition-all"
                     style={{
                       color: agentMode === m ? "#c4b87a" : "#4a6644",
