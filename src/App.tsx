@@ -789,6 +789,10 @@ export default function App() {
     document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
   }
 
+  function openNotesView() {
+    document.getElementById("grove-notes")?.scrollIntoView({ behavior: "smooth" });
+  }
+
   const switcher = (
     <AppSwitcher
       active={activeApp}
@@ -903,7 +907,11 @@ onAnswersSubmitted={(a, c) => {
           Grove
         </a>
         <div className="hidden md:flex items-center gap-7">
-          {NAV_LINKS.map((l) => l === "Ward" ? (
+          {NAV_LINKS.map((l) => l === "Notes" ? (
+            <button key={l} onClick={openNotesView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
+              {l}
+            </button>
+          ) : l === "Ward" ? (
             <button key={l} onClick={openWardView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
               {l}
             </button>
@@ -934,7 +942,11 @@ onAnswersSubmitted={(a, c) => {
 
       {mobileMenuOpen && (
         <div className="fixed inset-x-0 top-[61px] z-40 py-4 px-6 flex flex-col gap-4" style={{ backgroundColor: "#141a12", borderBottom: "1px solid rgba(74,102,68,0.2)" }}>
-          {NAV_LINKS.map((l) => l === "Ward" ? (
+          {NAV_LINKS.map((l) => l === "Notes" ? (
+            <button key={l} className="text-sm py-1 text-left" style={{ color: "#8a9e80" }} onClick={() => { setMobileMenuOpen(false); openNotesView(); }}>
+              {l}
+            </button>
+          ) : l === "Ward" ? (
             <button key={l} className="text-sm py-1 text-left" style={{ color: "#8a9e80" }} onClick={() => { setMobileMenuOpen(false); openWardView(); }}>
               {l}
             </button>
@@ -1041,7 +1053,16 @@ onAnswersSubmitted={(a, c) => {
           {/* Quick links */}
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {NAV_LINKS.map((l) => (
-              l === "Ward" ? (
+              l === "Notes" ? (
+                <button
+                  key={l}
+                  onClick={openNotesView}
+                  className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
+                  style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
+                >
+                  {l}
+                </button>
+              ) : l === "Ward" ? (
                 <button
                   key={l}
                   onClick={openWardView}
@@ -1080,7 +1101,9 @@ onAnswersSubmitted={(a, c) => {
           {PILLARS.map((p) => (
             <a
               key={p.name}
+              id={p.name === "Notes" ? "grove-notes" : undefined}
               href={p.href}
+              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : undefined}
               className="group relative p-7 transition-all"
               style={{ backgroundColor: "#161d14" }}
             >
