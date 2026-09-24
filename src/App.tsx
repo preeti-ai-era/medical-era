@@ -806,7 +806,10 @@ export default function App() {
   }
 
   function openAgentView() {
-    document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
+    setActiveApp("grove");
+    requestAnimationFrame(() => {
+      document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
+    });
   }
 
   const switcher = (
