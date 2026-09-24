@@ -689,7 +689,7 @@ const PILLARS = [
     name: "Search",
     tagline: "One search across everything.",
     body: "Notes, book metadata, medicines, educational protocols — searched together. Typo-tolerant. Filter by subject, level, exam vs ward. Results labeled by source.",
-    href: "/search",
+    href: "#grove-search",
   },
   {
     icon: (
@@ -799,6 +799,10 @@ export default function App() {
 
   function openMedicinesView() {
     document.getElementById("grove-medicines")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function openSearchView() {
+    document.getElementById("grove-search")?.scrollIntoView({ behavior: "smooth" });
   }
 
   const switcher = (
@@ -932,7 +936,7 @@ onAnswersSubmitted={(a, c) => {
               {l}
             </button>
           ) : (
-            <a key={l} href={`/${l.toLowerCase()}`} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
+            <a key={l} href={l === "Medicines" ? "#grove-medicines" : `/${l.toLowerCase()}`} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
               {l}
             </a>
           ))}
@@ -975,7 +979,7 @@ onAnswersSubmitted={(a, c) => {
               {l}
             </button>
           ) : (
-            <a key={l} href={`/${l.toLowerCase()}`} className="text-sm py-1" style={{ color: "#8a9e80" }} onClick={() => setMobileMenuOpen(false)}>
+            <a key={l} href={l === "Medicines" ? "#grove-medicines" : `/${l.toLowerCase()}`} className="text-sm py-1" style={{ color: "#8a9e80" }} onClick={() => setMobileMenuOpen(false)}>
               {l}
             </a>
           ))}
@@ -1116,7 +1120,7 @@ onAnswersSubmitted={(a, c) => {
               ) : (
                 <a
                   key={l}
-                  href={`/${l.toLowerCase()}`}
+                  href={l === "Medicines" ? "#grove-medicines" : `/${l.toLowerCase()}`}
                   className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
                   style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
                 >
@@ -1143,9 +1147,9 @@ onAnswersSubmitted={(a, c) => {
           {PILLARS.map((p) => (
             <a
               key={p.name}
-              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : undefined}
+              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : p.name === "Search" ? "grove-search" : undefined}
               href={p.href}
-              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : undefined}
+              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : p.name === "Search" ? (event) => { event.preventDefault(); openSearchView(); } : undefined}
               className="group relative p-7 transition-all"
               style={{ backgroundColor: "#161d14" }}
             >
