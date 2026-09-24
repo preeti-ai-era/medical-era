@@ -678,7 +678,7 @@ const PILLARS = [
     name: "Books",
     tagline: "The right book, the right edition.",
     body: "Curated textbook recommendations by subject, level, and purpose. We point you to what is worth reading. No pirated PDFs. Honest about editions and gaps.",
-    href: "/books",
+    href: "#grove-books",
   },
   {
     icon: (
