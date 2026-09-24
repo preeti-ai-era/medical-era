@@ -700,7 +700,7 @@ const PILLARS = [
     name: "Medicines",
     tagline: "Educational monographs. Not a prescription.",
     body: "Drug class, typical uses, contraindications, major interactions, monitoring. Doses only when sourced — otherwise unknown. Look-alike / sound-alike callouts included.",
-    href: "/medicines",
+    href: "#grove-medicines",
   },
   {
     icon: (
@@ -795,6 +795,10 @@ export default function App() {
 
   function openBooksView() {
     document.getElementById("grove-books")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function openMedicinesView() {
+    document.getElementById("grove-medicines")?.scrollIntoView({ behavior: "smooth" });
   }
 
   const switcher = (
@@ -919,6 +923,10 @@ onAnswersSubmitted={(a, c) => {
             <button key={l} onClick={openBooksView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
               {l}
             </button>
+          ) : l === "Medicines" ? (
+            <button key={l} onClick={openMedicinesView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
+              {l}
+            </button>
           ) : l === "Ward" ? (
             <button key={l} onClick={openWardView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
               {l}
@@ -956,6 +964,10 @@ onAnswersSubmitted={(a, c) => {
             </button>
           ) : l === "Books" ? (
             <button key={l} className="text-sm py-1 text-left" style={{ color: "#8a9e80" }} onClick={() => { setMobileMenuOpen(false); openBooksView(); }}>
+              {l}
+            </button>
+          ) : l === "Medicines" ? (
+            <button key={l} className="text-sm py-1 text-left" style={{ color: "#8a9e80" }} onClick={() => { setMobileMenuOpen(false); openMedicinesView(); }}>
               {l}
             </button>
           ) : l === "Ward" ? (
@@ -1083,6 +1095,15 @@ onAnswersSubmitted={(a, c) => {
                 >
                   {l}
                 </button>
+              ) : l === "Medicines" ? (
+                <button
+                  key={l}
+                  onClick={openMedicinesView}
+                  className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
+                  style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
+                >
+                  {l}
+                </button>
               ) : l === "Ward" ? (
                 <button
                   key={l}
@@ -1122,9 +1143,9 @@ onAnswersSubmitted={(a, c) => {
           {PILLARS.map((p) => (
             <a
               key={p.name}
-              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : undefined}
+              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : undefined}
               href={p.href}
-              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : undefined}
+              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : undefined}
               className="group relative p-7 transition-all"
               style={{ backgroundColor: "#161d14" }}
             >
