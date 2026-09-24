@@ -780,8 +780,13 @@ export default function App() {
 
   function submitAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (agentMode !== "Explain" || !query.trim()) return;
+    if (!query.trim()) return;
     setAgentResponse(getLocalEducationalResponse(query));
+  }
+
+  function openWardView() {
+    setAgentMode("Ward");
+    document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
   }
 
   const switcher = (
@@ -898,7 +903,11 @@ onAnswersSubmitted={(a, c) => {
           Grove
         </a>
         <div className="hidden md:flex items-center gap-7">
-          {NAV_LINKS.map((l) => (
+          {NAV_LINKS.map((l) => l === "Ward" ? (
+            <button key={l} onClick={openWardView} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
+              {l}
+            </button>
+          ) : (
             <a key={l} href={`/${l.toLowerCase()}`} className="text-sm font-light tracking-wide transition-colors hover:text-[#c4b87a]" style={{ color: "#8a9e80" }}>
               {l}
             </a>
@@ -925,7 +934,11 @@ onAnswersSubmitted={(a, c) => {
 
       {mobileMenuOpen && (
         <div className="fixed inset-x-0 top-[61px] z-40 py-4 px-6 flex flex-col gap-4" style={{ backgroundColor: "#141a12", borderBottom: "1px solid rgba(74,102,68,0.2)" }}>
-          {NAV_LINKS.map((l) => (
+          {NAV_LINKS.map((l) => l === "Ward" ? (
+            <button key={l} className="text-sm py-1 text-left" style={{ color: "#8a9e80" }} onClick={() => { setMobileMenuOpen(false); openWardView(); }}>
+              {l}
+            </button>
+          ) : (
             <a key={l} href={`/${l.toLowerCase()}`} className="text-sm py-1" style={{ color: "#8a9e80" }} onClick={() => setMobileMenuOpen(false)}>
               {l}
             </a>
@@ -1011,7 +1024,7 @@ onAnswersSubmitted={(a, c) => {
                   Ask
                 </button>
                 </div>
-                {agentMode === "Explain" && agentResponse && (
+                {agentResponse && (
                   <div className="mx-4 mb-3 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(58,84,53,0.24)", border: "1px solid rgba(138,186,130,0.28)" }}>
                     <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#8aba82" }}>Educational reference</p>
                     <p className="text-sm leading-relaxed" style={{ color: "#e4dfd0" }}>{agentResponse.answer}</p>
@@ -1028,14 +1041,25 @@ onAnswersSubmitted={(a, c) => {
           {/* Quick links */}
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             {NAV_LINKS.map((l) => (
-              <a
-                key={l}
-                href={`/${l.toLowerCase()}`}
-                className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
-                style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
-              >
-                {l}
-              </a>
+              l === "Ward" ? (
+                <button
+                  key={l}
+                  onClick={openWardView}
+                  className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
+                  style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
+                >
+                  {l}
+                </button>
+              ) : (
+                <a
+                  key={l}
+                  href={`/${l.toLowerCase()}`}
+                  className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all hover:bg-[#2a3828]"
+                  style={{ color: "#6a8a64", border: "1px solid rgba(74,102,68,0.35)" }}
+                >
+                  {l}
+                </a>
+              )
             ))}
           </div>
         </div>
@@ -1084,7 +1108,7 @@ onAnswersSubmitted={(a, c) => {
       </section>
 
       {/* Agent showcase */}
-      <section className="px-6 md:px-10 py-24" style={{ backgroundColor: "#111810" }}>
+      <section id="grove-agent" className="px-6 md:px-10 py-24" style={{ backgroundColor: "#111810" }}>
         <div className="max-w-4xl mx-auto">
           <div className="mb-12">
             <p className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: "#4a6644" }}>
