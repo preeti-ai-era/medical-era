@@ -1044,6 +1044,7 @@ onAnswersSubmitted={(a, c) => {
                 {AGENT_MODES.map((m) => (
                   <button
                     key={m}
+                    type={m === "Ward" ? "button" : undefined}
                     onClick={m === "Ward" ? selectMainWardMode : () => setAgentMode(m)}
                     className="flex-1 py-3 text-sm font-medium transition-all"
                     style={{
