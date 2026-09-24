@@ -13,6 +13,45 @@ export interface AiUnderstandingResult {
   provider: "deterministic-fallback" | "llm";
 }
 
+export interface LocalEducationalResponse {
+  answer: string;
+  caveat: string;
+}
+
+const LOCAL_EDUCATIONAL_RESPONSES: Array<{ matches: string[]; response: LocalEducationalResponse }> = [
+  {
+    matches: ["glaucoma"],
+    response: {
+      answer: "Glaucoma is a group of eye conditions that can damage the optic nerve, often in association with pressure-related stress inside the eye. It may develop gradually without noticeable symptoms, which is why regular eye examinations are important.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. An eye-care professional must assess symptoms, eye pressure, and the optic nerve for an individual.",
+    },
+  },
+  {
+    matches: ["cataract"],
+    response: {
+      answer: "A cataract is a clouding of the eye's natural lens that can make vision hazy, reduce contrast, or increase glare. Cataracts commonly develop gradually over time.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. Persistent or changing vision should be assessed by an eye-care professional.",
+    },
+  },
+  {
+    matches: ["myopia", "short sight", "short-sight", "nearsighted"],
+    response: {
+      answer: "Myopia, also called short-sightedness, is a focusing condition in which distant objects appear less clear because light focuses in front of the retina rather than directly on it.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. An eye examination is needed to determine an individual's prescription and eye health.",
+    },
+  },
+];
+
+export function getLocalEducationalResponse(question: string): LocalEducationalResponse {
+  const normalizedQuestion = question.trim().toLowerCase();
+  const match = LOCAL_EDUCATIONAL_RESPONSES.find(({ matches }) => matches.some((term) => normalizedQuestion.includes(term)));
+
+  return match?.response ?? {
+    answer: "Grove does not have a verified local reference answer for that question yet. It can provide general educational context when a topic is covered, but it should not guess.",
+    caveat: "This is educational reference information, not a diagnosis or medical advice. For personal concerns, speak with a qualified healthcare professional.",
+  };
+}
+
 export interface MedicalEraAiProvider {
   understand(request: AiUnderstandingRequest): Promise<AiUnderstandingResult>;
 }

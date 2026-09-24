@@ -6,6 +6,7 @@ import MedicalEraCaseReview from "./MedicalEraCaseReview";
 import MedicalEraAIFollowUp, { type UploadedFile, type Answers } from "./MedicalEraAIFollowUp";
 import { updatePatientCaseStatus } from "./api";
 import type { PatientCase } from "./MedicalEraDoctorDashboard";
+import { getLocalEducationalResponse, type LocalEducationalResponse } from "./medicalEraAiProvider";
 
 type ActiveApp = "grove" | "patient" | "doctor-login" | "doctor";
 type MedicalEraScreen = "welcome" | "who-for" | "step-2" | "follow-up";
@@ -764,6 +765,7 @@ export default function App() {
   const [activeApp, setActiveApp] = useState<ActiveApp>("patient");
   const [doctorAuthenticated, setDoctorAuthenticated] = useState(false);
   const [query, setQuery] = useState("");
+  const [agentResponse, setAgentResponse] = useState<LocalEducationalResponse | null>(null);
   const [agentMode, setAgentMode] = useState<AgentMode>("Explain");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [patientUploads, setPatientUploads] = useState<UploadedFile[]>([]);
@@ -774,6 +776,12 @@ export default function App() {
     // Always require login — never bypass to dashboard directly
     setActiveApp("doctor-login");
     setDoctorAuthenticated(false);
+  }
+
+  function submitAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (agentMode !== "Explain" || !query.trim()) return;
+    setAgentResponse(getLocalEducationalResponse(query));
   }
 
   const switcher = (
@@ -976,7 +984,8 @@ onAnswersSubmitted={(a, c) => {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3 px-4 py-3">
+              <form onSubmit={submitAgentQuestion}>
+                <div className="flex items-center gap-3 px-4 py-3">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4 shrink-0" style={{ color: "#4a6644" }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0016.803 15.803z" />
                 </svg>
@@ -995,12 +1004,21 @@ onAnswersSubmitted={(a, c) => {
                   style={{ color: "#e4dfd0", fontFamily: "'Source Sans 3', sans-serif" }}
                 />
                 <button
+                  type="submit"
                   className="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all"
                   style={{ backgroundColor: "#3a5435", color: "#c8e0c0" }}
                 >
                   Ask
                 </button>
-              </div>
+                </div>
+                {agentMode === "Explain" && agentResponse && (
+                  <div className="mx-4 mb-3 rounded-xl px-4 py-3" style={{ backgroundColor: "rgba(58,84,53,0.24)", border: "1px solid rgba(138,186,130,0.28)" }}>
+                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#8aba82" }}>Educational reference</p>
+                    <p className="text-sm leading-relaxed" style={{ color: "#e4dfd0" }}>{agentResponse.answer}</p>
+                    <p className="text-xs leading-relaxed mt-2" style={{ color: "#9aad90" }}>{agentResponse.caveat}</p>
+                  </div>
+                )}
+              </form>
               <p className="px-4 pb-3 text-xs" style={{ color: "#4a6644" }}>
                 Do not paste patient names or identifiers.
               </p>
