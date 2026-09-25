@@ -728,6 +728,10 @@ const PILLARS = [
 
 const AGENT_MODES = ["Explain", "Ward", "Exam"] as const;
 type AgentMode = (typeof AGENT_MODES)[number];
+type GroveSearchSource = "Notes" | "Books" | "Medicines" | "Educational Reference";
+type GroveSearchResult = { title: string; content: string; source: GroveSearchSource; keywords: string[] };
+
+const SEARCH_QUERY_STOP_WORDS = new Set(["a", "about", "can", "define", "do", "does", "explain", "find", "for", "how", "is", "me", "of", "please", "search", "show", "tell", "the", "to", "what", "you"]);
 
 const EXPLAIN_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEducationalResponse }> = [
   {
@@ -879,6 +883,27 @@ const AGENT_EXAMPLE: Record<AgentMode, { q: string; a: string; caveat: string }>
   },
 };
 
+const GROVE_SEARCH_INDEX: GroveSearchResult[] = [
+  ...PILLARS.filter(({ name }) => name === "Notes" || name === "Books" || name === "Medicines").map(({ name, tagline, body }) => ({
+    title: name,
+    content: `${tagline} ${body}`,
+    source: name as "Notes" | "Books" | "Medicines",
+    keywords: [name, tagline],
+  })),
+  ...[...EXPLAIN_REFERENCE_RESPONSES, ...EXAM_REFERENCE_RESPONSES].map(({ matches, response }) => ({
+    title: matches[0].split(" ").map((word) => word.toLowerCase() === "iop" ? "IOP" : `${word.charAt(0).toUpperCase()}${word.slice(1)}`).join(" "),
+    content: `${response.answer} ${response.caveat}`,
+    source: "Educational Reference" as const,
+    keywords: matches,
+  })),
+  ...Object.entries(AGENT_EXAMPLE).map(([mode, example]) => ({
+    title: `${mode} mode example`,
+    content: `${example.q} ${example.a} ${example.caveat}`,
+    source: "Educational Reference" as const,
+    keywords: [mode, example.q],
+  })),
+];
+
 const PERSONAS = [
   { role: "MBBS / Medical Student", needs: "Subject notes, exam explanations, book guidance, accurate mnemonics." },
   { role: "Intern", needs: "Ward lookups: fluids, common drugs, investigations, how to write notes, when to escalate." },
@@ -897,6 +922,8 @@ export default function App() {
   const [activeApp, setActiveApp] = useState<ActiveApp>("patient");
   const [doctorAuthenticated, setDoctorAuthenticated] = useState(false);
   const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<GroveSearchResult[] | null>(null);
   const [agentResponse, setAgentResponse] = useState<LocalEducationalResponse | null>(null);
   const [agentMode, setAgentMode] = useState<AgentMode>("Explain");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -933,6 +960,19 @@ export default function App() {
       return;
     }
     setAgentResponse(getLocalEducationalResponse(query));
+  }
+
+  function submitGroveSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedQuery = searchQuery.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    const terms = normalizedQuery.split(" ").filter((term) => term && !SEARCH_QUERY_STOP_WORDS.has(term));
+    const matchingResults = terms.length === 0
+      ? []
+      : GROVE_SEARCH_INDEX.filter(({ title, content, keywords }) => {
+        const searchableText = `${title} ${content} ${keywords.join(" ")}`.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ");
+        return terms.every((term) => searchableText.includes(term));
+      });
+    setSearchResults(matchingResults);
   }
 
   function selectMainWardMode() {
@@ -1189,7 +1229,7 @@ onAnswersSubmitted={(a, c) => {
           </p>
 
           {/* Search bar */}
-          <div id="grove-search" className="relative max-w-2xl mx-auto">
+          <div className="relative max-w-2xl mx-auto">
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(26,34,22,0.95)", border: "1px solid rgba(74,102,68,0.5)", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}>
               <div className="flex border-b" style={{ borderColor: "rgba(74,102,68,0.3)" }}>
                 {AGENT_MODES.map((m) => (
@@ -1353,6 +1393,68 @@ onAnswersSubmitted={(a, c) => {
               </div>
             </a>
           ))}
+        </div>
+      </section>
+
+      {/* Grove Search */}
+      <section id="grove-search" className="px-6 md:px-10 py-24" style={{ backgroundColor: "#111810" }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-10">
+            <p className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: "#4a6644" }}>
+              Grove Search
+            </p>
+            <h2 className="lora text-3xl md:text-4xl font-medium" style={{ color: "#e0d8c4" }}>
+              Search across Grove.
+            </h2>
+          </div>
+
+          <form onSubmit={submitGroveSearch} className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#1a2218", border: "1px solid rgba(74,102,68,0.3)" }}>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4 shrink-0" style={{ color: "#6a8a64" }} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0016.803 15.803z" />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => { setSearchQuery(event.target.value); setSearchResults(null); }}
+                placeholder="Search notes, books, medicines, and references..."
+                aria-label="Search Grove content"
+                className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:opacity-40"
+                style={{ color: "#e4dfd0", fontFamily: "'Source Sans 3', sans-serif" }}
+              />
+              <button
+                type="submit"
+                className="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all"
+                style={{ backgroundColor: "#3a5435", color: "#c8e0c0" }}
+              >
+                Search
+              </button>
+            </div>
+          </form>
+
+          {searchResults !== null && (
+            <div className="mt-5" aria-live="polite">
+              {searchResults.length === 0 ? (
+                <p className="text-sm" style={{ color: "#9aad90" }}>No matching Grove results found</p>
+              ) : (
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#1a2218", border: "1px solid rgba(74,102,68,0.3)" }}>
+                  {searchResults.map((result, index) => (
+                    <article
+                      key={`${result.source}-${result.title}-${index}`}
+                      className="px-5 py-4"
+                      style={{ borderBottom: index < searchResults.length - 1 ? "1px solid rgba(74,102,68,0.2)" : undefined }}
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <h3 className="lora text-lg font-medium" style={{ color: "#ddd5be" }}>{result.title}</h3>
+                        <span className="shrink-0 text-xs" style={{ color: "#c4b87a" }}>{result.source}</span>
+                      </div>
+                      <p className="text-sm leading-relaxed" style={{ color: "#9aad90" }}>{result.content}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
