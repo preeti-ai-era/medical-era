@@ -711,7 +711,7 @@ const PILLARS = [
     name: "Ward",
     tagline: "Templates for history, rounds, handover.",
     body: "Progress note structure, discharge summary templates, investigation primers, fluid and oxygen principles. For learning — no real patient data stored.",
-    href: "/ward",
+    href: "#grove-agent",
   },
   {
     icon: (
@@ -728,6 +728,30 @@ const PILLARS = [
 
 const AGENT_MODES = ["Explain", "Ward", "Exam"] as const;
 type AgentMode = (typeof AGENT_MODES)[number];
+
+const EXPLAIN_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEducationalResponse }> = [
+  {
+    matches: ["normal iop", "normal intraocular pressure", "normal eye pressure", "iop"],
+    response: {
+      answer: "Educational reference: the commonly taught normal intraocular pressure (IOP) range is about 10–21 mmHg, measured by tonometry.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. IOP varies between people and should be interpreted with the optic nerve, visual field, cornea, and other clinical findings by an eye-care professional.",
+    },
+  },
+  {
+    matches: ["visual acuity", "snellen chart", "6/6", "20/20"],
+    response: {
+      answer: "Educational reference: 6/6 (20/20) is commonly used as a reference for distance visual acuity. The first number is the testing distance and the second is the distance at which a person with standard acuity can read the same line.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. Visual acuity is only one part of an eye examination.",
+    },
+  },
+  {
+    matches: ["emmetropia", "emmetropic"],
+    response: {
+      answer: "Educational reference: emmetropia describes an eye in which parallel light rays from a distant object focus on the retina when accommodation is relaxed.",
+      caveat: "This is educational reference information, not a diagnosis or medical advice. Real eyes can have refractive or ocular findings that require a professional examination.",
+    },
+  },
+];
 
 const AGENT_EXAMPLE: Record<AgentMode, { q: string; a: string; caveat: string }> = {
   Explain: {
@@ -781,6 +805,12 @@ export default function App() {
   function submitAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!query.trim()) return;
+    if (agentMode === "Explain") {
+      const normalizedQuestion = query.trim().toLowerCase();
+      const explainReference = EXPLAIN_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => normalizedQuestion.includes(term)));
+      setAgentResponse(explainReference?.response ?? getLocalEducationalResponse(query));
+      return;
+    }
     setAgentResponse(getLocalEducationalResponse(query));
   }
 
@@ -1178,7 +1208,7 @@ onAnswersSubmitted={(a, c) => {
               key={p.name}
               id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : p.name === "Search" ? "grove-search" : undefined}
               href={p.href}
-              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : p.name === "Search" ? (event) => { event.preventDefault(); openSearchView(); } : p.name === "Agent" ? (event) => { event.preventDefault(); openAgentView(); } : undefined}
+              onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : p.name === "Search" ? (event) => { event.preventDefault(); openSearchView(); } : p.name === "Agent" ? (event) => { event.preventDefault(); openAgentView(); } : p.name === "Ward" ? (event) => { event.preventDefault(); openWardView(); } : undefined}
               className="group relative p-7 transition-all"
               style={{ backgroundColor: "#161d14" }}
             >
