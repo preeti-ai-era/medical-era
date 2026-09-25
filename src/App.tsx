@@ -753,6 +753,114 @@ const EXPLAIN_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEdu
   },
 ];
 
+const EXAM_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEducationalResponse }> = [
+  {
+    matches: ["normal iop", "normal intraocular pressure", "normal eye pressure", "iop"],
+    response: {
+      answer: "Normal IOP is commonly taught as approximately 10-21 mmHg.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["snellen chart", "snellen", "visual acuity chart"],
+    response: {
+      answer: "A Snellen chart tests distance visual acuity using rows of letters that decrease in size. Results are recorded as a fraction, such as 6/6 (20/20).",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["visual acuity", "acuity of vision", "6/6", "20/20"],
+    response: {
+      answer: "Visual acuity is the clarity or sharpness of vision, commonly measured at a set distance with a chart. 6/6 (20/20) is a commonly taught reference for distance acuity.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["emmetropia", "emmetropic"],
+    response: {
+      answer: "Emmetropia is the refractive state in which parallel light rays from a distant object focus on the retina when accommodation is relaxed.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["myopia", "short sight", "short-sight", "nearsighted"],
+    response: {
+      answer: "Myopia occurs when the image focuses in front of the retina with accommodation relaxed, commonly because the eye is too long or has excessive refractive power.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["hypermetropia", "hypermetropia", "hyperopia", "long sight", "long-sight", "farsighted"],
+    response: {
+      answer: "Hypermetropia (hyperopia) is a refractive error in which light would focus behind the retina with accommodation relaxed, often associated with a short eye or low refractive power.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["astigmatism", "astigmatic"],
+    response: {
+      answer: "Astigmatism is a refractive error in which unequal curvature or power across the eye's meridians prevents light from forming one focal point on the retina.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["presbyopia", "age related near vision", "age-related near vision"],
+    response: {
+      answer: "Presbyopia is the age-related reduction in accommodation that makes near focusing more difficult, often becoming noticeable in the 40s.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["cornea function", "function of cornea", "cornea"],
+    response: {
+      answer: "The cornea is the transparent anterior surface of the eye and provides most of its refractive power while also protecting deeper structures.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["aqueous humor", "aqueous humour"],
+    response: {
+      answer: "Aqueous humour is produced by the ciliary processes, flows through the posterior chamber and pupil into the anterior chamber, and drains mainly through the trabecular meshwork and canal of Schlemm.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["rods and cones", "rod and cone", "photoreceptors", "retina function"],
+    response: {
+      answer: "Rods are highly sensitive photoreceptors for dim-light vision, while cones support colour vision and high-acuity vision in brighter light.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["accommodation", "near reflex"],
+    response: {
+      answer: "Accommodation increases the lens' refractive power for near vision through ciliary muscle contraction, zonular relaxation, and increased lens curvature.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["convergence", "near point of convergence", "convergent eye movement"],
+    response: {
+      answer: "Convergence is the coordinated inward movement of both eyes to fixate on a near target, supporting single binocular vision.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["keratometry", "keratometer", "corneal curvature measurement"],
+    response: {
+      answer: "Keratometry measures the curvature of the anterior cornea, commonly reported in diopters, and is used in eye-care assessments such as contact lens fitting.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+  {
+    matches: ["optic nerve", "cranial nerve ii", "cranial nerve 2"],
+    response: {
+      answer: "The optic nerve (cranial nerve II) carries visual information from retinal ganglion cells to the brain; it is a tract of the central nervous system rather than a typical peripheral nerve.",
+      caveat: "This is educational exam reference information, not a diagnosis or medical advice.",
+    },
+  },
+];
+
 const AGENT_EXAMPLE: Record<AgentMode, { q: string; a: string; caveat: string }> = {
   Explain: {
     q: "What is the mechanism of action of furosemide?",
@@ -809,6 +917,19 @@ export default function App() {
       const normalizedQuestion = query.trim().toLowerCase();
       const explainReference = EXPLAIN_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => normalizedQuestion.includes(term)));
       setAgentResponse(explainReference?.response ?? getLocalEducationalResponse(query));
+      return;
+    }
+    if (agentMode === "Exam") {
+      const normalizeExamText = (text: string) => text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+      const normalizedQuestion = normalizeExamText(query);
+      const normalIopReference = EXAM_REFERENCE_RESPONSES.find(({ matches }) => matches.includes("normal iop"));
+      const examReference = normalizedQuestion.includes("normal iop")
+        ? normalIopReference
+        : EXAM_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => {
+          const normalizedTerm = normalizeExamText(term);
+          return ` ${normalizedQuestion} `.includes(` ${normalizedTerm} `);
+        }));
+      setAgentResponse(examReference?.response ?? getLocalEducationalResponse(query));
       return;
     }
     setAgentResponse(getLocalEducationalResponse(query));
@@ -1068,7 +1189,7 @@ onAnswersSubmitted={(a, c) => {
           </p>
 
           {/* Search bar */}
-          <div className="relative max-w-2xl mx-auto">
+          <div id="grove-search" className="relative max-w-2xl mx-auto">
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(26,34,22,0.95)", border: "1px solid rgba(74,102,68,0.5)", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}>
               <div className="flex border-b" style={{ borderColor: "rgba(74,102,68,0.3)" }}>
                 {AGENT_MODES.map((m) => (
@@ -1206,7 +1327,7 @@ onAnswersSubmitted={(a, c) => {
           {PILLARS.map((p) => (
             <a
               key={p.name}
-              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : p.name === "Search" ? "grove-search" : undefined}
+              id={p.name === "Notes" ? "grove-notes" : p.name === "Books" ? "grove-books" : p.name === "Medicines" ? "grove-medicines" : undefined}
               href={p.href}
               onClick={p.name === "Notes" ? (event) => { event.preventDefault(); openNotesView(); } : p.name === "Books" ? (event) => { event.preventDefault(); openBooksView(); } : p.name === "Medicines" ? (event) => { event.preventDefault(); openMedicinesView(); } : p.name === "Search" ? (event) => { event.preventDefault(); openSearchView(); } : p.name === "Agent" ? (event) => { event.preventDefault(); openAgentView(); } : p.name === "Ward" ? (event) => { event.preventDefault(); openWardView(); } : undefined}
               className="group relative p-7 transition-all"
