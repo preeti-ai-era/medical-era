@@ -1006,6 +1006,8 @@ export default function App() {
   const [searchResults, setSearchResults] = useState<GroveSearchResult[] | null>(null);
   const [agentResponse, setAgentResponse] = useState<LocalEducationalResponse | null>(null);
   const [agentMode, setAgentMode] = useState<AgentMode>("Explain");
+  const [liveAgentQuestion, setLiveAgentQuestion] = useState("");
+  const [liveAgentConversation, setLiveAgentConversation] = useState<{ question: string; response: LocalEducationalResponse } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [patientUploads, setPatientUploads] = useState<UploadedFile[]>([]);
   const [patientAnswers, setPatientAnswers] = useState<Answers>({});
@@ -1017,18 +1019,15 @@ export default function App() {
     setDoctorAuthenticated(false);
   }
 
-  function submitAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!query.trim()) return;
+  function getAgentResponse(question: string): LocalEducationalResponse {
     if (agentMode === "Explain") {
-      const normalizedQuestion = query.trim().toLowerCase();
+      const normalizedQuestion = question.trim().toLowerCase();
       const explainReference = EXPLAIN_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => normalizedQuestion.includes(term)));
-      setAgentResponse(explainReference?.response ?? getLocalEducationalResponse(query));
-      return;
+      return explainReference?.response ?? getLocalEducationalResponse(question);
     }
     if (agentMode === "Exam") {
       const normalizeExamText = (text: string) => text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-      const normalizedQuestion = normalizeExamText(query);
+      const normalizedQuestion = normalizeExamText(question);
       const normalIopReference = EXAM_REFERENCE_RESPONSES.find(({ matches }) => matches.includes("normal iop"));
       const examReference = normalizedQuestion.includes("normal iop")
         ? normalIopReference
@@ -1036,19 +1035,31 @@ export default function App() {
           const normalizedTerm = normalizeExamText(term);
           return ` ${normalizedQuestion} `.includes(` ${normalizedTerm} `);
         }));
-      setAgentResponse(examReference?.response ?? getLocalEducationalResponse(query));
-      return;
+      return examReference?.response ?? getLocalEducationalResponse(question);
     }
     if (agentMode === "Ward") {
-      const normalizedQuestion = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+      const normalizedQuestion = question.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
       const wardReference = WARD_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => {
         const normalizedTerm = term.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
         return ` ${normalizedQuestion} `.includes(` ${normalizedTerm} `);
       }));
-      setAgentResponse(wardReference?.response ?? getLocalEducationalResponse(query));
-      return;
+      return wardReference?.response ?? getLocalEducationalResponse(question);
     }
-    setAgentResponse(getLocalEducationalResponse(query));
+    return getLocalEducationalResponse(question);
+  }
+
+  function submitAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!query.trim()) return;
+    setAgentResponse(getAgentResponse(query));
+  }
+
+  function submitLiveAgentQuestion(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = liveAgentQuestion.trim();
+    if (!question) return;
+    setLiveAgentConversation({ question, response: getAgentResponse(question) });
+    setLiveAgentQuestion("");
   }
 
   function submitGroveSearch(event: React.FormEvent<HTMLFormElement>) {
@@ -1090,6 +1101,7 @@ export default function App() {
   }
 
   function openAgentView() {
+    setAgentMode("Explain");
     setActiveApp("grove");
     requestAnimationFrame(() => {
       document.getElementById("grove-agent")?.scrollIntoView({ behavior: "smooth" });
@@ -1582,36 +1594,56 @@ onAnswersSubmitted={(a, c) => {
 
           {/* Chat card */}
           <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#1a2218", border: "1px solid rgba(74,102,68,0.3)" }}>
-            {/* Question */}
-            <div className="px-6 pt-6 pb-4 flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-semibold" style={{ backgroundColor: "#2a3828", color: "#7aab6e" }}>
-                U
+            <form onSubmit={submitLiveAgentQuestion}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <input
+                  type="text"
+                  value={liveAgentQuestion}
+                  onChange={(event) => setLiveAgentQuestion(event.target.value)}
+                  placeholder="Ask a question…"
+                  aria-label="Ask the Grove Agent a question"
+                  className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:opacity-40"
+                  style={{ color: "#e4dfd0", fontFamily: "'Source Sans 3', sans-serif" }}
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 px-4 py-1.5 rounded-xl text-sm font-medium transition-all"
+                  style={{ backgroundColor: "#3a5435", color: "#c8e0c0" }}
+                >
+                  Ask
+                </button>
               </div>
-              <p className="text-sm leading-relaxed pt-0.5" style={{ color: "#b8c8b0" }}>
-                {AGENT_EXAMPLE[agentMode].q}
-              </p>
-            </div>
+            </form>
 
-            <div className="mx-6 h-px" style={{ backgroundColor: "rgba(74,102,68,0.2)" }} />
-
-            {/* Answer */}
-            <div className="px-6 pt-4 pb-4 flex items-start gap-3">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                style={{ backgroundColor: "#1e2a1b" }}
-              >
-                <span className="lora-italic text-xs" style={{ color: "#c4b87a" }}>G</span>
-              </div>
-              <div>
-                <p className="text-sm leading-relaxed mb-3" style={{ color: "#d0c8b0" }}>
-                  {AGENT_EXAMPLE[agentMode].a}
-                </p>
-                <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ backgroundColor: "#141a12", color: "#6a8a64", border: "1px solid rgba(74,102,68,0.2)" }}>
-                  <span className="font-semibold" style={{ color: "#c4b87a" }}>Caveat · </span>
-                  {AGENT_EXAMPLE[agentMode].caveat}
+            {liveAgentConversation && (
+              <>
+                <div className="px-6 pt-6 pb-4 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-semibold" style={{ backgroundColor: "#2a3828", color: "#7aab6e" }}>
+                    U
+                  </div>
+                  <p className="text-sm leading-relaxed pt-0.5" style={{ color: "#b8c8b0" }}>
+                    {liveAgentConversation.question}
+                  </p>
                 </div>
-              </div>
-            </div>
+
+                <div className="mx-6 h-px" style={{ backgroundColor: "rgba(74,102,68,0.2)" }} />
+
+                <div className="px-6 pt-4 pb-4 flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "#1e2a1b" }}>
+                    <span className="lora-italic text-xs" style={{ color: "#c4b87a" }}>G</span>
+                  </div>
+                  <div>
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: "#d0c8b0" }}>
+                      {liveAgentConversation.response.answer}
+                    </p>
+                    <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ backgroundColor: "#141a12", color: "#6a8a64", border: "1px solid rgba(74,102,68,0.2)" }}>
+                      <span className="font-semibold" style={{ color: "#c4b87a" }}>Caveat · </span>
+                      {liveAgentConversation.response.caveat}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Footer */}
             <div className="px-6 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(74,102,68,0.15)", backgroundColor: "rgba(0,0,0,0.15)" }}>
