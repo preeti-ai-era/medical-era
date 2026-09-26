@@ -113,6 +113,15 @@ The current prototype demonstrates:
 - Case review status persistence
 - Grove educational/search experience
 
+## Project Status
+
+Medical Era is an active prototype under development.
+
+The current version demonstrates patient intake, AI-assisted information organization, doctor review, AI Priority Findings, case status management, and the Grove educational workflow.
+
+The system is intended for demonstration and development purposes and is not a substitute for professional medical judgment.
+
+## Grove
 ## Grove
 
 Medical Era also includes **Grove**, an educational healthcare knowledge interface with:
