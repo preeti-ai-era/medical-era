@@ -28,7 +28,7 @@ Medical Era explores how AI can assist with the information-gathering and organi
 4. The information is organized into a structured case.
 5. The case is submitted to the doctor.
 
-### AI-assisted reasoning
+### ## AI-assisted information organization
 
 Medical Era can organize submitted information into:
 
