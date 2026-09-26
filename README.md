@@ -147,7 +147,23 @@ Grove is designed to provide educational information while clearly distinguishin
 - GitHub
 
 ## Project Structure
+## Screenshots
 
+### Patient Check-in
+
+![Patient Check-in](patient-check-in.png)
+
+### Doctor Dashboard
+
+![Doctor Dashboard](doctor-dashboard.png)
+
+### AI Priority Findings
+
+![AI Priority Findings](ai-priority-findings.png)
+
+### Grove
+
+![Grove](grove.png)
 ```text
 Medical Era
 ├── frontend
