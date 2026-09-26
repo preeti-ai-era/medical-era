@@ -865,6 +865,86 @@ const EXAM_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEducat
   },
 ];
 
+const WARD_REFERENCE_RESPONSES: Array<{ matches: string[]; response: LocalEducationalResponse }> = [
+  {
+    matches: ["history of present illness", "presenting illness", "hpi"],
+    response: {
+      answer: "Document the present concern in chronological order: onset, course, location, character, severity as reported, associated features, relevant context, and pertinent positives or negatives.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["past medical history", "past history", "pmh", "medical and surgical history"],
+    response: {
+      answer: "Record relevant previous conditions, operations, admissions, and major investigations, including approximate dates where known. Distinguish patient-reported details from verified records.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["medication history", "medication reconciliation", "current medications", "current medicines"],
+    response: {
+      answer: "Document prescribed and non-prescribed medicines, supplements, dose and schedule as reported, source of the information, adherence concerns, and any recent changes. Reconcile discrepancies according to local workflow.",
+      caveat: "This is educational documentation guidance, not prescribing or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["allergy history", "drug allergy", "allergy documentation", "allergies"],
+    response: {
+      answer: "Record the substance and the reported reaction and severity, plus relevant timing or source. Clearly distinguish a confirmed allergy, an uncertain history, and no known allergies according to local terminology.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Verify and document uncertainty according to local policy.",
+    },
+  },
+  {
+    matches: ["family history", "family medical history"],
+    response: {
+      answer: "Record relevant conditions among family members, their relationship to the patient, and age at onset when known. Note when information is unavailable rather than assuming it is negative.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["social history", "social and personal history"],
+    response: {
+      answer: "Document relevant living situation, occupation, supports, function, and tobacco, alcohol, or other substance use when appropriate. Ask sensitively and record the patient's words and context without judgment.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["chief complaint", "presenting complaint", "reason for presentation"],
+    response: {
+      answer: "State the main reason for the encounter briefly, preferably in the patient's own words, with the reported duration. Keep it distinct from the clinician's assessment or diagnosis.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["examination documentation", "documenting examination", "physical examination findings", "examination findings", "physical exam"],
+    response: {
+      answer: "Record objective findings with the examination time and relevant observations, including pertinent positives and negatives. Separate observed findings from interpretation and use the approved record format.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+  {
+    matches: ["assessment and plan", "assessment & plan", "a and p", "a p documentation", "plan documentation"],
+    response: {
+      answer: "Organize the assessment by problem, summarizing the available findings and any uncertainty. Document the agreed plan, intended follow-up, outstanding actions, and who is responsible, using the local format.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Clinical decisions should be made with the supervising team and documented per local policy.",
+    },
+  },
+  {
+    matches: ["handover", "hand over", "clinical handoff", "ward round", "ward-round", "ward rounds", "ward round documentation", "rounds documentation"],
+    response: {
+      answer: "For handover or ward-round notes, include the patient identifiers required by local policy, date and time, current situation, relevant background, assessment, and clear next actions. Identify pending tasks, responsible person, and escalation plan.",
+      caveat: "This is educational workflow guidance, not diagnosis or patient-specific medical advice. Use your institution's handover standard and confirm critical details with the responsible clinician.",
+    },
+  },
+  {
+    matches: ["patient history", "history taking", "taking a history", "clinical history"],
+    response: {
+      answer: "A structured patient history commonly covers the chief complaint and present illness, relevant past history, medicines, allergies, family and social history, and a review of relevant systems. Record the source, chronology, pertinent positives and negatives, and what remains uncertain.",
+      caveat: "This is educational documentation guidance, not diagnosis or patient-specific medical advice. Follow local policy and consult your supervising clinician.",
+    },
+  },
+];
+
 const AGENT_EXAMPLE: Record<AgentMode, { q: string; a: string; caveat: string }> = {
   Explain: {
     q: "What is the mechanism of action of furosemide?",
@@ -957,6 +1037,15 @@ export default function App() {
           return ` ${normalizedQuestion} `.includes(` ${normalizedTerm} `);
         }));
       setAgentResponse(examReference?.response ?? getLocalEducationalResponse(query));
+      return;
+    }
+    if (agentMode === "Ward") {
+      const normalizedQuestion = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+      const wardReference = WARD_REFERENCE_RESPONSES.find(({ matches }) => matches.some((term) => {
+        const normalizedTerm = term.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+        return ` ${normalizedQuestion} `.includes(` ${normalizedTerm} `);
+      }));
+      setAgentResponse(wardReference?.response ?? getLocalEducationalResponse(query));
       return;
     }
     setAgentResponse(getLocalEducationalResponse(query));
