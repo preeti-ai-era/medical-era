@@ -95,8 +95,7 @@ function MedicalEraRoleSelect({ onSelect }: { onSelect: (role: "patient" | "doct
 }
 
 // ── Doctor login screen ───────────────────────────────────────────────────────
-const DEMO_ID = "doctor@medicalera.demo";
-const DEMO_PW = "MedicalEra123";
+
 
 function DoctorLogin({ onSuccess, onBack }: { onSuccess: () => void; onBack: () => void }) {
   const [id, setId] = useState("");
@@ -105,19 +104,41 @@ function DoctorLogin({ onSuccess, onBack }: { onSuccess: () => void; onBack: () 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setTimeout(() => {
-      setLoading(false);
-      if (id.trim() === DEMO_ID && pw === DEMO_PW) {
-        onSuccess();
-      } else {
-        setError("Incorrect doctor credentials. Please try again.");
-      }
-    }, 600);
+  async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch("https://medical-era.onrender.com/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: id.trim(),
+        password: pw,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Incorrect doctor credentials. Please try again.");
+    }
+
+    localStorage.setItem("medicalEraDoctorToken", data.token);
+    onSuccess();
+  } catch (error) {
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Unable to log in right now. Please try again."
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div className="min-h-full flex flex-col" style={{ fontFamily: "'Inter','DM Sans',system-ui,sans-serif", backgroundColor: "#eef3f8" }}>
