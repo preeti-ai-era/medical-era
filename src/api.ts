@@ -1,5 +1,11 @@
 const API_BASE_URL = "https://medical-era.onrender.com";
+function getDoctorAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem("medicalEraDoctorToken");
 
+  return token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+}
 export type PatientStatus = "New" | "Reviewed";
 
 export type PatientIdentity = {
@@ -10,8 +16,10 @@ export type PatientIdentity = {
 };
 
 export async function getPatientCases() {
-  const response = await fetch(`${API_BASE_URL}/api/patient`);
-  if (!response.ok) {
+const response = await fetch(`${API_BASE_URL}/api/patient`, {
+  headers: getDoctorAuthHeaders(),
+});
+if (!response.ok) {
     throw new Error(`Unable to load patient cases (${response.status})`);
   }
   return response.json();
@@ -52,8 +60,11 @@ export async function updatePatientCaseStatus(
 ) {
   const response = await fetch(`${API_BASE_URL}/api/patient/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+headers: {
+  "Content-Type": "application/json",
+  ...getDoctorAuthHeaders(),
+},
+body: JSON.stringify({ status }),
   });
 
   if (!response.ok) {
@@ -77,8 +88,11 @@ export async function createAISummary(payload: {
 }) {
   const response = await fetch(`${API_BASE_URL}/api/ai-summary`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+headers: {
+  "Content-Type": "application/json",
+  ...getDoctorAuthHeaders(),
+},
+body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
