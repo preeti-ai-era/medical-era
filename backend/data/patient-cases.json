@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1001,
+    "complaint": "headache and eye pain",
+    "answers": {
+      "onset": "Yesterday",
+      "trend": "Getting worse",
+      "severity": "Moderate - affecting my routine",
+      "medicines": "No",
+      "other_symptoms": [
+        "Difficulty sleeping"
+      ]
+    },
+    "uploadedFiles": [],
+    "submittedAt": "2026-09-15T14:58:00.960Z",
+    "status": "Reviewed"
+  },
+  {
+    "id": 1002,
+    "fullName": "Demo Patient",
+    "age": 29,
+    "gender": "Female",
+    "phone": "0000000000",
+    "complaint": "eye strain",
+    "answers": {
+      "onset": "Yesterday",
+      "trend": "Getting worse",
+      "severity": "Severe - affecting routine",
+      "medicines": "No",
+      "other_symptoms": [
+        "Sensitivity to light"
+      ]
+    },
+    "uploadedFiles": [],
+    "submittedAt": "2026-09-15T17:12:45.692Z",
+    "status": "New"
+  }
+]
