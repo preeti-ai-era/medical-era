@@ -4,9 +4,49 @@ const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
 const { Pool } = require("pg");
-
+const crypto = require("crypto");
 const app = express();
+const DEMO_DOCTOR_EMAIL =
+  process.env.DEMO_DOCTOR_EMAIL || "doctor@medicalera.demo";
 
+const DEMO_DOCTOR_PASSWORD =
+  process.env.DEMO_DOCTOR_PASSWORD || "MedicalEra123";
+
+const activeSessions = new Map();
+
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
+function createSession() {
+  const token = crypto.randomBytes(32).toString("hex");
+
+  activeSessions.set(token, {
+    role: "doctor",
+    expiresAt: Date.now() + SESSION_DURATION_MS,
+  });
+
+  return token;
+}
+
+function requireDoctor(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  const token = authHeader.slice(7);
+  const session = activeSessions.get(token);
+
+  if (!session || session.expiresAt <= Date.now()) {
+    activeSessions.delete(token);
+    return res.status(401).json({ message: "Session expired or invalid" });
+  }
+
+  if (session.role !== "doctor") {
+    return res.status(403).json({ message: "Doctor access required" });
+  }
+
+  next();
+}
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required to start the Medical Era backend.");
 }
@@ -18,9 +58,42 @@ const pool = new Pool({
     : undefined,
 });
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = new Set([
+  "https://medical-era-frontend.onrender.com",
+  "http://localhost:5173",
+]);
 
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+); 
+app.use(express.json());
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+
+  if (email !== DEMO_DOCTOR_EMAIL || password !== DEMO_DOCTOR_PASSWORD) {
+    return res.status(401).json({
+      message: "Invalid doctor credentials",
+    });
+  }
+
+  const token = createSession();
+
+  return res.json({
+    message: "Doctor login successful",
+    token,
+    role: "doctor",
+  });
+});
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -101,8 +174,7 @@ app.post("/api/patient", async (req, res) => {
 });
 
 // Doctor retrieves all patient cases
-app.get("/api/patient", async (req, res) => {
-  try {
+app.get("/api/patient", requireDoctor, async (req, res) => {  try {
     const result = await pool.query(
       'SELECT * FROM patient_cases ORDER BY "submittedAt" DESC, id DESC',
     );
@@ -114,8 +186,7 @@ app.get("/api/patient", async (req, res) => {
 });
 
 // Doctor retrieves one patient case
-app.get("/api/patient/:id", async (req, res) => {
-  try {
+app.get("/api/patient/:id", requireDoctor, async (req, res) => {  try {
     const result = await pool.query(
       "SELECT * FROM patient_cases WHERE id = $1",
       [req.params.id],
@@ -133,8 +204,7 @@ app.get("/api/patient/:id", async (req, res) => {
 });
 
 // Doctor updates a patient case status
-app.patch("/api/patient/:id/status", async (req, res) => {
-  try {
+app.patch("/api/patient/:id/status", requireDoctor, async (req, res) => {  try {
     const result = await pool.query(
       `
         UPDATE patient_cases
@@ -157,8 +227,7 @@ app.patch("/api/patient/:id/status", async (req, res) => {
 });
 
 // AI creates a structured case summary
-app.post("/api/ai-summary", async (req, res) => {
-  if (!client) {
+app.post("/api/ai-summary", requireDoctor, async (req, res) => {  if (!client) {
     return res.status(503).json({
       message: "AI summary is unavailable because OPENAI_API_KEY is not configured on the backend.",
     });
