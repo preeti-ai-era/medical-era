@@ -43,8 +43,11 @@ export default function MedicalEraDoctorDashboard({
 
     async function loadCases() {
       try {
-        const response = await fetch(PATIENT_CASES_URL);
-        if (!response.ok) {
+const response = await fetch(PATIENT_CASES_URL, {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("medicalEraDoctorToken") || ""}`,
+  },
+});        if (!response.ok) {
           throw new Error(`Unable to load patient cases (${response.status})`);
         }
         const data: { cases?: PatientCase[] } = await response.json();
