@@ -141,6 +141,56 @@ app.get("/", (req, res) => {
 // Patient submits a case
 app.post("/api/patient", async (req, res) => {
   try {
+    const {
+      fullName,
+      age,
+      gender,
+      phone,
+      complaint,
+      answers,
+      uploadedFiles,
+    } = req.body || {};
+
+    if (
+      typeof fullName !== "string" ||
+      fullName.length > 100 ||
+      typeof complaint !== "string" ||
+      complaint.length > 1000
+    ) {
+      return res.status(400).json({
+        message: "Invalid patient information",
+      });
+    }
+
+    if (
+      typeof phone !== "string" ||
+      phone.length > 20 ||
+      typeof gender !== "string" ||
+      gender.length > 50
+    ) {
+      return res.status(400).json({
+        message: "Invalid patient information",
+      });
+    }
+
+    if (
+      answers !== undefined &&
+      (typeof answers !== "object" || Array.isArray(answers))
+    ) {
+      return res.status(400).json({
+        message: "Invalid answers format",
+      });
+    }
+
+    if (
+      uploadedFiles !== undefined &&
+      !Array.isArray(uploadedFiles)
+    ) {
+      return res.status(400).json({
+        message: "Invalid uploaded files format",
+      });
+    }
+
     const result = await pool.query(
       `
         INSERT INTO patient_cases
