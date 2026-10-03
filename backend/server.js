@@ -29,8 +29,7 @@ function createSession() {
 function requireDoctor(req, res, next) {
   const authHeader = req.headers.authorization || "";
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Authentication required" });
+if (!authHeader.startsWith("Bearer ")) {    return res.status(401).json({ message: "Authentication required" });
   }
 
   const token = authHeader.slice(7);
