@@ -176,15 +176,17 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
     } = req.body || {};
 
     if (
-      typeof fullName !== "string" ||
-      fullName.length > 100 ||
-      typeof complaint !== "string" ||
-      complaint.length > 1000
-    ) {
-      return res.status(400).json({
-        message: "Invalid patient information",
-      });
-    }
+  typeof fullName !== "string" ||
+  fullName.length > 100 ||
+  typeof age !== "string" ||
+  age.length > 3 ||
+  typeof complaint !== "string" ||
+  complaint.length > 1000
+) {
+  return res.status(400).json({
+    message: "Invalid patient information",
+  });
+}
 
     if (
       typeof phone !== "string" ||
