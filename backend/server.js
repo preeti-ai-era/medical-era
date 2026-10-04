@@ -208,14 +208,14 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
       });
     }
 
-    if (
-      uploadedFiles !== undefined &&
-      !Array.isArray(uploadedFiles)
-    ) {
-      return res.status(400).json({
-        message: "Invalid uploaded files format",
-      });
-    }
+   if (
+  uploadedFiles !== undefined &&
+  (!Array.isArray(uploadedFiles) || uploadedFiles.length > 10)
+) {
+  return res.status(400).json({
+    message: "Invalid uploaded files format",
+  });
+}
 
     const result = await pool.query(
       `
