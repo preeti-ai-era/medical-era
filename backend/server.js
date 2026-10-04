@@ -228,9 +228,9 @@ Number(age) > 120 ||
     const result = await pool.query(
       `
         INSERT INTO patient_cases
-          (name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", status)
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, 'New')
-        RETURNING *
+(name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", department, status)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, 'General Ophthalmology', 'New')
+RETURNING *
       `,
       [
         req.body.fullName || req.body.name || "",
