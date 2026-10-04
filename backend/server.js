@@ -155,8 +155,8 @@ function mapPatientCase(row) {
     answers: row.answers,
     uploadedFiles: row.uploadedFiles,
     submittedAt: new Date(row.submittedAt).toISOString(),
-    status: row.status,
-  };
+status: row.status,
+department: row.department,  };
 }
 
 // Test backend
