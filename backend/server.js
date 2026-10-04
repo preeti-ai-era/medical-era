@@ -137,6 +137,9 @@ async function initializeDatabase() {
       "submittedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Reviewed'))
     )
+  `);  await pool.query(`
+    ALTER TABLE patient_cases
+    ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'General Ophthalmology'
   `);
 }
 
