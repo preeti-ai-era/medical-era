@@ -6,6 +6,7 @@ const OpenAI = require("openai");
 const { Pool } = require("pg");
 const crypto = require("crypto");
 const app = express();
+app.set("trust proxy", 1);
 const DEMO_DOCTOR_EMAIL =
   process.env.DEMO_DOCTOR_EMAIL || "doctor@medicalera.demo";
 
@@ -13,7 +14,32 @@ const DEMO_DOCTOR_PASSWORD =
   process.env.DEMO_DOCTOR_PASSWORD || "MedicalEra123";
 
 const activeSessions = new Map();
+const patientSubmissionAttempts = new Map();
 
+const PATIENT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const PATIENT_RATE_LIMIT_MAX = 10;
+
+function patientSubmissionRateLimit(req, res, next) {
+  const now = Date.now();
+  const ip = req.ip;
+
+  const attempts = patientSubmissionAttempts.get(ip) || [];
+
+  const recentAttempts = attempts.filter(
+    (timestamp) => now - timestamp < PATIENT_RATE_LIMIT_WINDOW_MS
+  );
+
+  if (recentAttempts.length >= PATIENT_RATE_LIMIT_MAX) {
+    return res.status(429).json({
+      message: "Too many patient submissions. Please try again later.",
+    });
+  }
+
+  recentAttempts.push(now);
+  patientSubmissionAttempts.set(ip, recentAttempts);
+
+  next();
+}
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 function createSession() {
   const token = crypto.randomBytes(32).toString("hex");
@@ -138,8 +164,7 @@ app.get("/", (req, res) => {
 });
 
 // Patient submits a case
-app.post("/api/patient", async (req, res) => {
-  try {
+app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try {
     const {
       fullName,
       age,
