@@ -190,8 +190,8 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
 
     if (
       typeof phone !== "string" ||
-!/\d/.test(phone) ||
-phone.length > 20 ||
+!/^\d{10,15}$/.test(phone) ||
+      phone.length > 20 ||
       typeof gender !== "string" ||
       gender.length > 50
     ) {
