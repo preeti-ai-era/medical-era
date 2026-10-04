@@ -179,7 +179,9 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
   typeof fullName !== "string" ||
   fullName.length > 100 ||
   typeof age !== "string" ||
-  age.length > 3 ||
+!Number.isInteger(Number(age)) ||
+Number(age) < 0 ||
+Number(age) > 120 ||
   typeof complaint !== "string" ||
   complaint.length > 1000
 ) {
@@ -200,10 +202,12 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
       });
     }
 
-    if (
-      answers !== undefined &&
-      (typeof answers !== "object" || Array.isArray(answers))
-    ) {
+  if (
+  answers !== undefined &&
+  (typeof answers !== "object" ||
+    Array.isArray(answers) ||
+    JSON.stringify(answers).length > 20000)
+) {
       return res.status(400).json({
         message: "Invalid answers format",
       });
