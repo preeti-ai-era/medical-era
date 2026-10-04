@@ -101,7 +101,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 ); 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body || {};
 
