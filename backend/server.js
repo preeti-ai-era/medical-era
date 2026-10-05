@@ -178,7 +178,27 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
   uploadedFiles,
   department,
 } = req.body || {};
+    const allowedDepartments = new Set([
+      "General Ophthalmology",
+      "Optometry",
+      "Pediatric Ophthalmology",
+      "Neuro-Ophthalmology",
+      "Cornea",
+      "Glaucoma",
+      "Retina",
+      "Oculoplasty",
+      "Contact Lens/Low Vision",
+    ]);
 
+    if (
+      department !== undefined &&
+      (typeof department !== "string" ||
+        !allowedDepartments.has(department))
+    ) {
+      return res.status(400).json({
+        message: "Invalid department",
+      });
+    }
     if (
   typeof fullName !== "string" ||
   fullName.length > 100 ||
