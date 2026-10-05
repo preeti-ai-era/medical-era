@@ -169,14 +169,15 @@ app.get("/", (req, res) => {
 // Patient submits a case
 app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try {
     const {
-      fullName,
-      age,
-      gender,
-      phone,
-      complaint,
-      answers,
-      uploadedFiles,
-    } = req.body || {};
+  fullName,
+  age,
+  gender,
+  phone,
+  complaint,
+  answers,
+  uploadedFiles,
+  department,
+} = req.body || {};
 
     if (
   typeof fullName !== "string" ||
@@ -229,9 +230,7 @@ Number(age) > 120 ||
       `
         INSERT INTO patient_cases
 (name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", department, status)
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, 'General Ophthalmology', 'New')
-RETURNING *
-      `,
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New')      `,
       [
         req.body.fullName || req.body.name || "",
         req.body.age || "",
@@ -240,8 +239,9 @@ RETURNING *
         req.body.complaint || "",
         JSON.stringify(req.body.answers || {}),
         JSON.stringify(req.body.uploadedFiles || []),
-        new Date().toISOString(),
-      ],
+       new Date().toISOString(),
+department || "General Ophthalmology",
+],
     );
 
     const patientCase = mapPatientCase(result.rows[0]);
