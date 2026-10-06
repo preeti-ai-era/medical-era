@@ -69,7 +69,7 @@ if (!authHeader.startsWith("Bearer ")) {    return res.status(401).json({ messag
 
   if (session.role !== "doctor") {
     return res.status(403).json({ message: "Doctor access required" });
-  }
+  }req.doctorId = session.doctorId;
 
   next();
 }
@@ -255,9 +255,8 @@ Number(age) > 120 ||
     const result = await pool.query(
       `
         INSERT INTO patient_cases
-(name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", department, status)
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New')      `,
-      [
+(name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", department, status, "assignedDoctorId")
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New', $10)      [
         req.body.fullName || req.body.name || "",
         req.body.age || "",
         req.body.gender || "",
@@ -267,7 +266,7 @@ VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New')      `,
         JSON.stringify(req.body.uploadedFiles || []),
        new Date().toISOString(),
 department || "General Ophthalmology",
-],
+"doctor-001",],
     );
 
     const patientCase = mapPatientCase(result.rows[0]);
