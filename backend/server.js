@@ -161,9 +161,9 @@ function mapPatientCase(row) {
     uploadedFiles: row.uploadedFiles,
     submittedAt: new Date(row.submittedAt).toISOString(),
 status: row.status,
-department: row.department,  };
-}
-
+department: row.department,
+assignedDoctorId: row.assignedDoctorId,
+};
 // Test backend
 app.get("/", (req, res) => {
   res.json({
