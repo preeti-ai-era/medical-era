@@ -138,9 +138,14 @@ async function initializeDatabase() {
       status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Reviewed'))
     )
   `);  await pool.query(`
-    ALTER TABLE patient_cases
-    ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'General Ophthalmology'
-  `);
+  ALTER TABLE patient_cases
+  ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'General Ophthalmology'
+`);
+
+await pool.query(`
+  ALTER TABLE patient_cases
+  ADD COLUMN IF NOT EXISTS assignedDoctorId TEXT
+`);
 }
 
 function mapPatientCase(row) {
