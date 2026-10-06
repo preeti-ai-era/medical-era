@@ -281,11 +281,14 @@ console.log("Patient case received:", patientCase.id);
   }
 });
 
-// Doctor retrieves all patient cases
+// Doctor retrieves assigned patient cases
 app.get("/api/patient", requireDoctor, async (req, res) => {  try {
     const result = await pool.query(
-      'SELECT * FROM patient_cases ORDER BY "submittedAt" DESC, id DESC',
-    );
+  `SELECT * FROM patient_cases
+   WHERE "assignedDoctorId" = $1
+   ORDER BY "submittedAt" DESC, id DESC`,
+  [req.doctorId]
+);
     res.json({ cases: result.rows.map(mapPatientCase) });
   } catch (error) {
     console.error("Patient case list error:", error);
