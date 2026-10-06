@@ -265,8 +265,7 @@ department || "General Ophthalmology",
     );
 
     const patientCase = mapPatientCase(result.rows[0]);
-    console.log("Patient case received:", patientCase);
-
+console.log("Patient case received:", patientCase.id);
     res.status(201).json({
       message: "Patient data received successfully",
       case: patientCase,
