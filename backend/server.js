@@ -45,9 +45,10 @@ function createSession() {
   const token = crypto.randomBytes(32).toString("hex");
 
   activeSessions.set(token, {
-    role: "doctor",
-    expiresAt: Date.now() + SESSION_DURATION_MS,
-  });
+  role: "doctor",
+  doctorId: "doctor-001",
+  expiresAt: Date.now() + SESSION_DURATION_MS,
+});
 
   return token;
 }
