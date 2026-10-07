@@ -15,6 +15,8 @@ export type PatientCase = {
   uploadedFiles?: UploadedFile[];
   submittedAt?: string;
   status: "New" | "Reviewed";
+  department?: string;
+assignedDoctorId?: string;
 };
 
 function CrossIcon() {
