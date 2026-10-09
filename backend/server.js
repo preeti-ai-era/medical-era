@@ -205,32 +205,15 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
         message: "Invalid department",
       });
     }
-    if (
-  typeof fullName !== "string" ||
-  fullName.length > 100 ||
-  typeof age !== "string" ||
-!Number.isInteger(Number(age)) ||
-Number(age) < 0 ||
-Number(age) > 120 ||
+   if (
   typeof complaint !== "string" ||
+  complaint.trim().length === 0 ||
   complaint.length > 1000
 ) {
   return res.status(400).json({
-    message: "Invalid patient information",
+    message: "Invalid patient complaint",
   });
 }
-
-    if (
-      typeof phone !== "string" ||
-!/^\d{10,15}$/.test(phone) ||
-      phone.length > 20 ||
-      typeof gender !== "string" ||
-      gender.length > 50
-    ) {
-      return res.status(400).json({
-        message: "Invalid patient information",
-      });
-    }
 
   if (
   answers !== undefined &&
