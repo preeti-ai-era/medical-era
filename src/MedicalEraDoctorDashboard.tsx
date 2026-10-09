@@ -257,8 +257,11 @@ const response = await fetch(PATIENT_CASES_URL, {
                     <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <p className="me-body text-xs" style={{ color: "#94a3b8" }}>
-                    Submitted {patientCase.submittedAt ? new Date(patientCase.submittedAt).toLocaleString("en-IN") : "Not provided"}
-                  </p>
+  Department: {patientCase.department || "General Ophthalmology"}
+</p>
+<p className="me-body text-xs" style={{ color: "#94a3b8" }}>
+  Submitted {patientCase.submittedAt ? new Date(patientCase.submittedAt).toLocaleString("en-IN") : "Not provided"}
+   </p>
                 </div>
                 <button
                   className="me-body text-sm font-semibold px-5 py-2.5 rounded-xl transition-all"
