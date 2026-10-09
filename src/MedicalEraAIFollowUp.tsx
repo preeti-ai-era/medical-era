@@ -77,9 +77,11 @@ function QuestionScreen({
   onNext: () => void;
 }) {
   const hasAnswer =
-    question.type === "multi"
-      ? Array.isArray(answer) && answer.length > 0
-      : typeof answer === "string" && answer.length > 0;
+  question.type === "multi"
+    ? Array.isArray(answer) && answer.length > 0
+    : question.type === "text"
+    ? true
+    : typeof answer === "string" && answer.length > 0;
 
   function toggleMulti(opt: string) {
     const current = Array.isArray(answer) ? answer : [];
