@@ -90,7 +90,7 @@ const domainQuestions: Record<SymptomDomainId, FollowUpQuestionConfig[]> = {
     }
   ],
 
-  ],
+  
   other: [
     { id: "problem_area", text: "Which area of the body is affected?", type: "text", domains: ["other"], requiredForRouting: true },
     { id: "other_associated", text: "Are there other symptoms you want to mention?", type: "text", domains: ["other"] },
