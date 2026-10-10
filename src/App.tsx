@@ -369,7 +369,7 @@ function MedicalEraStep2({ onBack, onSubmit }: { onBack: () => void; onSubmit: (
 }
 
 function MedicalEraStep4({ onBack }: { onBack: () => void }) {
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, onAnswersSubmitted] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
