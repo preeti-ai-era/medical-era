@@ -165,7 +165,7 @@ status: row.status,
 department: row.department,
 assignedDoctorId: row.assignedDoctorId,
 };
-// Test backend
+}// Test backend
 app.get("/", (req, res) => {
   res.json({
     message: "Medical Era backend is running",
