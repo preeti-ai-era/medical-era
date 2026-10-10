@@ -239,8 +239,10 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
       `
         INSERT INTO patient_cases
 (name, age, gender, phone, complaint, answers, "uploadedFiles", "submittedAt", department, status, "assignedDoctorId")
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New', $10)      [
-        req.body.fullName || req.body.name || "",
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, 'New', $10)
+`,
+[
+      req.body.fullName || req.body.name || "",
         req.body.age || "",
         req.body.gender || "",
         req.body.phone || "",
