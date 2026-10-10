@@ -76,13 +76,20 @@ function QuestionScreen({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const hasAnswer =
+  
+const [draft, setDraft] = useState(
+  typeof answer === "string" ? answer : ""
+);
+
+const hasAnswer =
   question.type === "multi"
     ? Array.isArray(answer) && answer.length > 0
     : question.type === "text"
-    ? true
+    ? draft.trim().length > 0
     : typeof answer === "string" && answer.length > 0;
 
+
+    
   function toggleMulti(opt: string) {
     const current = Array.isArray(answer) ? answer : [];
     if (opt === "None of these") {
@@ -151,8 +158,10 @@ function QuestionScreen({
           className="w-full rounded-xl p-3.5 text-sm resize-none outline-none me-body"
           rows={3}
           placeholder="Type your answer here…"
-          value={typeof answer === "string" ? answer : ""}
-          onChange={(e) => onAnswer(e.target.value)}
+          
+value={draft}
+onChange={(e) => setDraft(e.target.value)}
+
           style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2eaf3", color: "#0c2340" }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "#1a6fa8")}
           onBlur={(e) => (e.currentTarget.style.borderColor = "#e2eaf3")}
@@ -474,7 +483,12 @@ function UploadScreen({
                 {(u.file.size / 1024).toFixed(0)} KB
               </span>
               <button
-                onClick={() => onRemoveFile(i)}
+                
+onClick={hasAnswer ? () => {
+  if (question.type === "text") onAnswer(draft.trim());
+  onNext();
+} : undefined}
+={() => onRemoveFile(i)}
                 className="me-body text-xs font-medium transition-colors shrink-0"
                 style={{ color: "#dc2626" }}
                 aria-label={`Remove ${u.file.name}`}
