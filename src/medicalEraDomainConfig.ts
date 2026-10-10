@@ -107,7 +107,14 @@ const definitions: Record<SymptomDomainId, Omit<ClinicalDomainConfig, "questions
   neurology: { id: "neurology", label: "Neurology", department: "Neurology", concepts: ["headache", "dizziness", "weakness", "numbness", "tingling", "seizure", "confusion"], requiredAnswerIds: ["neurologic_pattern", "neurologic_onset"], routingExplanation: "The patient reported neurological information." },
   urology: { id: "urology", label: "Urology", department: "Urology", concepts: ["urinary", "urination", "burning urination", "blood in urine", "bladder", "pelvic"], requiredAnswerIds: ["urinary_features", "urinary_onset"], routingExplanation: "The patient reported urinary or bladder-related information." },
   gynecology: { id: "gynecology", label: "Gynecology", department: "Obstetrics & Gynecology", concepts: ["pelvic", "period", "vaginal", "pregnancy", "discharge", "bleeding"], requiredAnswerIds: ["gynecologic_features", "gynecologic_onset"], routingExplanation: "The patient reported gynecologic or reproductive information." },
-  "general-medicine":
+"general-medicine": {
+  id: "general-medicine",
+  label: "General Medicine",
+  department: "General Medicine",
+  concepts: ["fever", "illness", "fatigue", "body ache", "malaise"],
+  requiredAnswerIds: [],
+  routingExplanation: "The patient reported general medical symptoms."
+},  
   "mental-health": {
     id: "mental-health",
     label: "Mental Health",
