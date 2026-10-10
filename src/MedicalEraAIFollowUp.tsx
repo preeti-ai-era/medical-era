@@ -188,7 +188,12 @@ onChange={(e) => setDraft(e.target.value)}
             boxShadow: hasAnswer ? "0 2px 8px rgba(26,111,168,0.25)" : "none",
           }}
           disabled={!hasAnswer}
-          onClick={hasAnswer ? onNext : undefined}
+        
+onClick={hasAnswer ? () => {
+  if (question.type === "text") onAnswer(draft.trim());
+  onNext();
+} : undefined}
+
           onMouseEnter={(e) => { if (hasAnswer) e.currentTarget.style.backgroundColor = "#155e90"; }}
           onMouseLeave={(e) => { if (hasAnswer) e.currentTarget.style.backgroundColor = "#1a6fa8"; }}
         >
@@ -482,13 +487,10 @@ function UploadScreen({
               <span className="me-body text-xs shrink-0" style={{ color: "#94a3b8" }}>
                 {(u.file.size / 1024).toFixed(0)} KB
               </span>
-              <button
-                
-onClick={hasAnswer ? () => {
-  if (question.type === "text") onAnswer(draft.trim());
-  onNext();
-} : undefined}
-={() => onRemoveFile(i)}
+              
+<button
+  onClick={() => onRemoveFile(i)}
+
                 className="me-body text-xs font-medium transition-colors shrink-0"
                 style={{ color: "#dc2626" }}
                 aria-label={`Remove ${u.file.name}`}
