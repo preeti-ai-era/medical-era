@@ -70,7 +70,26 @@ const domainQuestions: Record<SymptomDomainId, FollowUpQuestionConfig[]> = {
     { id: "gynecologic_onset", text: "When did this problem start?", type: "single", options: ["Today", "Within the last few days", "More than a week ago", "I'm not sure"], domains: ["gynecology"], requiredForRouting: true },
   ],
   "general-medicine": [
-    { id: "general_associated", text: "Which other symptoms are present?", type: "multi", options: ["Fever", "Fatigue or weakness", "Body aches", "Cough or breathing problem", "None of these"], domains: ["general-medicine"] },
+{ id: "general_associated", text: "Which other symptoms are present?", type: "multi", options: ["Fever", "Fatigue or weakness", "Body aches", "Cough or breathing problem", "None of these"], domains: ["general-medicine"] },],
+"mental-health": [
+    {
+      id: "mental_health_duration",
+      text: "How long have you been feeling this way?",
+      type: "single",
+      options: ["Today", "A few days", "A few weeks", "A month or longer", "I'm not sure"],
+      domains: ["mental-health"],
+      requiredForRouting: true
+    },
+    {
+      id: "mental_health_impact",
+      text: "How much is this affecting your daily activities?",
+      type: "single",
+      options: ["A little", "Somewhat", "A lot", "I'm finding it hard to function"],
+      domains: ["mental-health"],
+      requiredForRouting: true
+    }
+  ],
+
   ],
   other: [
     { id: "problem_area", text: "Which area of the body is affected?", type: "text", domains: ["other"], requiredForRouting: true },
@@ -88,7 +107,25 @@ const definitions: Record<SymptomDomainId, Omit<ClinicalDomainConfig, "questions
   neurology: { id: "neurology", label: "Neurology", department: "Neurology", concepts: ["headache", "dizziness", "weakness", "numbness", "tingling", "seizure", "confusion"], requiredAnswerIds: ["neurologic_pattern", "neurologic_onset"], routingExplanation: "The patient reported neurological information." },
   urology: { id: "urology", label: "Urology", department: "Urology", concepts: ["urinary", "urination", "burning urination", "blood in urine", "bladder", "pelvic"], requiredAnswerIds: ["urinary_features", "urinary_onset"], routingExplanation: "The patient reported urinary or bladder-related information." },
   gynecology: { id: "gynecology", label: "Gynecology", department: "Obstetrics & Gynecology", concepts: ["pelvic", "period", "vaginal", "pregnancy", "discharge", "bleeding"], requiredAnswerIds: ["gynecologic_features", "gynecologic_onset"], routingExplanation: "The patient reported gynecologic or reproductive information." },
-  "general-medicine": { id: "general-medicine", label: "General Medicine", department: "General Medicine", concepts: ["fever", "illness", "fatigue", "body ache", "malaise", "general discomfort"], requiredAnswerIds: ["general_associated"], routingExplanation: "The patient reported general medical information without a more specific domain." },
+  "general-medicine":
+  "mental-health": {
+    id: "mental-health",
+    label: "Mental Health",
+    department: "Mental Health / Psychiatry (staff review)",
+    concepts: [
+      "anxiety", "anxious", "sad", "sadness",
+      "depression", "depressed", "panic",
+      "panic attack", "low mood", "feeling down",
+      "stress", "worry", "worried", "emotional distress"
+    ],
+    requiredAnswerIds: [
+      "mental_health_duration",
+      "mental_health_impact"
+    ],
+    routingExplanation:
+      "The patient reported emotional distress or mental-health-related concerns; staff review is required."
+  },
+ { id: "general-medicine", label: "General Medicine", department: "General Medicine", concepts: ["fever", "illness", "fatigue", "body ache", "malaise", "general discomfort"], requiredAnswerIds: ["general_associated"], routingExplanation: "The patient reported general medical information without a more specific domain." },
   other: { id: "other", label: "Other / unclear", department: "Department unclear — additional information needed", concepts: [], requiredAnswerIds: ["problem_area"], routingExplanation: "The available patient information is not specific enough to suggest a domain." },
 };
 
