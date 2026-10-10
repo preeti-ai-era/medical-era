@@ -132,7 +132,6 @@ const definitions: Record<SymptomDomainId, Omit<ClinicalDomainConfig, "questions
     routingExplanation:
       "The patient reported emotional distress or mental-health-related concerns; staff review is required."
   },
- { id: "general-medicine", label: "General Medicine", department: "General Medicine", concepts: ["fever", "illness", "fatigue", "body ache", "malaise", "general discomfort"], requiredAnswerIds: ["general_associated"], routingExplanation: "The patient reported general medical information without a more specific domain." },
   other: { id: "other", label: "Other / unclear", department: "Department unclear — additional information needed", concepts: [], requiredAnswerIds: ["problem_area"], routingExplanation: "The available patient information is not specific enough to suggest a domain." },
 };
 
