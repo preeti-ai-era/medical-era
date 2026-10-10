@@ -145,8 +145,7 @@ async function initializeDatabase() {
 
 await pool.query(`
   ALTER TABLE patient_cases
-  ADD COLUMN IF NOT EXISTS assignedDoctorId TEXT
-`);
+ADD COLUMN IF NOT EXISTS "assignedDoctorId" TEXT`);
 }
 
 function mapPatientCase(row) {
