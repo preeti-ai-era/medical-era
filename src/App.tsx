@@ -299,7 +299,86 @@ onAnswersSubmitted={(a, c) => {
 }
 
 
+function MedicalEraStep2({ onBack, onSubmit }: { onBack: () => void; onSubmit: (complaint: string) => void }) {
+  const [text, setText] = useState("");
+  const hasText = text.trim().length > 0;
 
+  return (
+    <div className="min-h-full flex flex-col" style={{ fontFamily: "'Inter','DM Sans',system-ui,sans-serif", backgroundColor: "#eef3f8" }}>
+      <style>{`.me-body{font-family:'Inter',system-ui,sans-serif}.me-heading{font-family:'DM Sans',system-ui,sans-serif}`}</style>
+      <header className="w-full px-6 py-5 flex items-center justify-between" style={{ backgroundColor: "white", borderBottom: "1px solid #e2eaf3" }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1a6fa8", color: "white" }}>
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" aria-hidden="true"><rect x="9" y="2" width="6" height="20" rx="2" fill="currentColor" /><rect x="2" y="9" width="20" height="6" rx="2" fill="currentColor" /></svg>
+          </div>
+          <span className="me-heading font-semibold text-lg tracking-tight" style={{ color: "#0c2340" }}>Medical Era</span>
+        </div>
+      </header>
+
+      <div className="w-full h-1" style={{ backgroundColor: "#e2eaf3" }}>
+        <div className="h-1 rounded-full" style={{ width: "50%", backgroundColor: "#1a6fa8" }} />
+      </div>
+
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm">
+          <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-medium mb-6" style={{ color: "#7a9ab5" }}>
+            <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4"><path d="M12.5 5l-5 5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Back
+          </button>
+
+          <div className="rounded-2xl p-8" style={{ backgroundColor: "white", boxShadow: "0 2px 8px rgba(10,40,80,0.07),0 0 0 1px rgba(10,40,80,0.06)" }}>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#1a6fa8" }} />
+              <span className="me-body text-xs font-medium uppercase tracking-widest" style={{ color: "#64748b" }}>Step 1 of 2</span>
+            </div>
+
+            <h1 className="me-heading text-2xl font-bold leading-snug mb-2" style={{ color: "#0c2340", letterSpacing: "-0.02em" }}>
+              What brings you in today?
+            </h1>
+
+            <p className="me-body text-sm mb-6" style={{ color: "#64748b" }}>
+              Describe what you are experiencing in your own words.
+            </p>
+
+            <textarea
+              className="w-full rounded-xl p-4 text-sm resize-none outline-none me-body"
+              rows={5}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="e.g. I have had a headache and fever for two days…"
+              style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2eaf3", color: "#0c2340" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#1a6fa8")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#e2eaf3")}
+            />
+
+            <button
+              className="w-full mt-4 py-4 rounded-xl text-base font-semibold transition-all"
+              style={{
+                backgroundColor: hasText ? "#1a6fa8" : "#e2eaf3",
+                color: hasText ? "white" : "#94a3b8",
+                boxShadow: hasText ? "0 2px 10px rgba(26,111,168,0.32)" : "none",
+                letterSpacing: "-0.01em",
+                cursor: hasText ? "pointer" : "default",
+              }}
+              disabled={!hasText}
+              onClick={() => onSubmit(text.trim())}
+            >
+              Continue
+            </button>
+
+            <p className="me-body text-xs text-center mt-3" style={{ color: "#94a3b8" }}>
+              AI will ask a few follow-up questions to help organize your information for the doctor.
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <footer className="text-center py-5">
+        <p className="me-body text-xs" style={{ color: "#b0bec5" }}>Medical Era · Healthcare platform</p>
+      </footer>
+    </div>
+  );
+}
 function MedicalEraStep4({ onBack }: { onBack: () => void }) {
   const [submitted, onAnswersSubmitted] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
