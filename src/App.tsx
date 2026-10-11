@@ -298,7 +298,7 @@ onAnswersSubmitted={(a, c) => {
   return <MedicalEra onStart={() => setScreen("who-for")} />;
 }
 
-function MedicalEraStep2({ onBack, onSubmit }: { onBack: () => void; onSubmit: (complaint: string) => void }) {
+function MedicalEraFlow({ onBack, onSubmit }: { onBack: () => void; onSubmit: (complaint: string) => void }) {
   const [text, setText] = useState("");
   const hasText = text.trim().length > 0;
 
