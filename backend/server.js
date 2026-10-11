@@ -183,17 +183,31 @@ app.post("/api/patient", patientSubmissionRateLimit, async (req, res) => {  try 
   uploadedFiles,
   department,
 } = req.body || {};
-    const allowedDepartments = new Set([
-      "General Ophthalmology",
-      "Optometry",
-      "Pediatric Ophthalmology",
-      "Neuro-Ophthalmology",
-      "Cornea",
-      "Glaucoma",
-      "Retina",
-      "Oculoplasty",
-      "Contact Lens/Low Vision",
-    ]);
+    
+const allowedDepartments = new Set([
+  "General Ophthalmology",
+  "Ophthalmology",
+  "Optometry",
+  "Pediatric Ophthalmology",
+  "Neuro-Ophthalmology",
+  "Cornea",
+  "Glaucoma",
+  "Retina",
+  "Oculoplasty",
+  "Contact Lens/Low Vision",
+  "Gastroenterology / General Medicine",
+  "ENT",
+  "Dermatology",
+  "Orthopedics",
+  "Cardiology / appropriate medical evaluation",
+  "Neurology",
+  "Urology",
+  "Obstetrics & Gynecology",
+  "General Medicine",
+  "Mental Health / Psychiatry (staff review)",
+  "Department unclear — additional information needed",
+]);
+
 
     if (
       department !== undefined &&
